@@ -19,7 +19,6 @@ COPYING file for more details.
 
 (** * Helper function for computing the rounded value of a real number. *)
 
-From Coq Require Import Lia.
 Require Import Core Digits Float_prop Bracket.
 
 Section Fcalc_round.
@@ -89,7 +88,7 @@ destruct Px as [Px|Px].
   destruct Bx as [Bx1 Bx2].
   apply lt_0_F2R in Bx1.
   apply gt_0_F2R in Bx2.
-  lia.
+  omega.
 Qed.
 
 (** Relates location and rounding. *)
@@ -586,7 +585,7 @@ apply Zlt_succ.
 rewrite Zle_bool_true with (1 := Hm).
 rewrite Zle_bool_false.
 now case Rlt_bool.
-lia.
+omega.
 Qed.
 
 Definition truncate_aux t k :=
@@ -675,7 +674,7 @@ unfold cexp.
 rewrite mag_F2R_Zdigits.
 2: now apply Zgt_not_eq.
 unfold k in Hk. clear -Hk.
-lia.
+omega.
 rewrite <- Hm', F2R_0.
 apply generic_format_0.
 Qed.
@@ -718,14 +717,14 @@ simpl.
 apply Zfloor_div.
 intros H.
 generalize (Zpower_pos_gt_0 beta k) (Zle_bool_imp_le _ _ (radix_prop beta)).
-lia.
+omega.
 rewrite scaled_mantissa_generic with (1 := Fx).
 now rewrite Zfloor_IZR.
 (* *)
 split.
 apply refl_equal.
 unfold k in Hk.
-lia.
+omega.
 Qed.
 
 Theorem truncate_correct_partial' :
@@ -745,7 +744,7 @@ destruct Zlt_bool ; intros Hk.
   now apply inbetween_float_new_location.
   ring.
 - apply (conj H1).
-  lia.
+  omega.
 Qed.
 
 Theorem truncate_correct_partial :
@@ -791,7 +790,7 @@ intros x m e l [Hx|Hx] H1 H2.
     destruct Zlt_bool.
       intros H.
       apply False_ind.
-      lia.
+      omega.
     intros _.
     apply (conj H1).
     right.
@@ -804,7 +803,7 @@ intros x m e l [Hx|Hx] H1 H2.
     rewrite mag_F2R_Zdigits with (1 := Zm).
     now apply Zlt_le_weak.
 - assert (Hm: m = 0%Z).
-  cut (m <= 0 < m + 1)%Z. lia.
+  cut (m <= 0 < m + 1)%Z. omega.
   assert (F2R (Float beta m e) <= x < F2R (Float beta (m + 1) e))%R as Hx'.
     apply inbetween_float_bounds with (1 := H1).
     rewrite <- Hx in Hx'.
@@ -1157,7 +1156,7 @@ exact H1.
 unfold k in Hk.
 destruct H2 as [H2|H2].
 left.
-lia.
+omega.
 right.
 split.
 exact H2.
@@ -1166,7 +1165,7 @@ inversion_clear H1.
 rewrite H.
 apply generic_format_F2R.
 unfold cexp.
-lia.
+omega.
 Qed.
 
 End Fcalc_round.

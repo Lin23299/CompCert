@@ -2871,10 +2871,7 @@ let elab_definition (for_loop: bool) (local: bool) (nonstatic_inline: bool)
 
   (* pragma *)
   | PRAGMA(s, loc) ->
-      if local then
-        warning loc Unnamed "pragmas are ignored inside functions"
-      else
-        emit_elab env loc (Gpragma s);
+      emit_elab env loc (Gpragma s);
       ([], env)
 
   (* static assertion *)

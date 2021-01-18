@@ -323,7 +323,7 @@ Qed.
   [Vptr b ofs] where [Genv.find_symbol ge id = Some b]. *)
 
 Definition inj (b: block) :=
-  match Genv.find_symbol ge b with
+  match Genv.find_symbol ge (block_to_ident b) with
   | Some b' => Some (b', 0)
   | None => None
   end.
@@ -440,7 +440,7 @@ Proof.
   (* var local *)
   unfold empty_env in H. rewrite PTree.gempty in H. congruence.
   (* var_global *)
-  econstructor. unfold inj. rewrite H0. eauto. auto.
+  econstructor. unfold inj. rewrite ident_to_block_to_ident. rewrite H0. eauto. auto.
   (* deref *)
   eauto.
   (* field struct *)
@@ -544,6 +544,7 @@ Proof.
 Local Opaque sizeof.
 - destruct i; intros until res; intros TR; simpl in TR.
 + monadInv TR. exists (x :: nil); split; auto. constructor; auto.
+
 + destruct ty; try discriminate.
   destruct (transl_init_array_spec _ _ _ _ _ TR) as (d & A & B).
   exists d; split; auto. constructor; auto.
@@ -561,7 +562,7 @@ Local Opaque sizeof.
 + destruct (zeq sz 0). 
   inv TR. exists (@nil init_data); split; auto. constructor.
   destruct (zle 0 sz).
-  inv TR. econstructor; split. constructor. lia. auto.
+  inv TR. econstructor; split. constructor. omega. auto.
   discriminate.
 + monadInv TR. 
   destruct (transl_init_rec_spec _ _ _ _ EQ) as (d1 & A1 & B1).
@@ -627,13 +628,13 @@ Proof.
   destruct f1; inv EQ0; simpl in H2; inv H2; assumption.
 - (* pointer *)
   unfold inj in H.
-  assert (data = Init_addrof b1 ofs1 /\ chunk = Mptr).
+  assert (data = Init_addrof (block_to_ident b1) ofs1 /\ chunk = Mptr).
   { remember Archi.ptr64 as ptr64.
     destruct ty; inversion EQ0.
     destruct i; inv H5. unfold Mptr. destruct Archi.ptr64; inv H6; inv H2; auto.
     subst ptr64. unfold Mptr. destruct Archi.ptr64; inv H5; inv H2; auto.
     inv H2. auto. }
-  destruct H4; subst. destruct (Genv.find_symbol ge b1); inv H.
+  destruct H4; subst. destruct (Genv.find_symbol ge (block_to_ident b1)); inv H.
   rewrite Ptrofs.add_zero in H3. auto.
 - (* undef *)
   discriminate.
@@ -672,8 +673,8 @@ Remark padding_size:
   forall frm to, frm <= to -> idlsize (tr_padding frm to) = to - frm.
 Proof.
   unfold tr_padding; intros. destruct (zlt frm to).
-  simpl. extlia.
-  simpl. lia.
+  simpl. xomega.
+  simpl. omega.
 Qed.
 
 Remark idlsize_app:
@@ -681,7 +682,7 @@ Remark idlsize_app:
 Proof.
   induction d1; simpl; intros.
   auto.
-  rewrite IHd1. lia.
+  rewrite IHd1. omega.
 Qed.
 
 Remark union_field_size:
@@ -690,8 +691,8 @@ Proof.
   induction fl as [|[i t]]; simpl; intros.
 - inv H.
 - destruct (ident_eq f i).
-  + inv H. extlia.
-  + specialize (IHfl H). extlia.
+  + inv H. xomega.
+  + specialize (IHfl H). xomega.
 Qed.
 
 Hypothesis ce_consistent: composite_env_consistent ge.
@@ -712,16 +713,16 @@ with tr_init_struct_size:
 Proof.
 Local Opaque sizeof.
 - destruct 1; simpl.
-+ erewrite transl_init_single_size by eauto. lia.
++ erewrite transl_init_single_size by eauto. omega.
 + Local Transparent sizeof. simpl. eapply tr_init_array_size; eauto. 
-+ replace (idlsize d) with (idlsize d + 0) by lia.
++ replace (idlsize d) with (idlsize d + 0) by omega.
   eapply tr_init_struct_size; eauto. simpl.
   unfold lookup_composite in H. destruct (ge.(genv_cenv)!id) as [co'|] eqn:?; inv H.
   erewrite co_consistent_sizeof by (eapply ce_consistent; eauto).
   unfold sizeof_composite. rewrite H0. apply align_le.
   destruct (co_alignof_two_p co) as [n EQ]. rewrite EQ. apply two_power_nat_pos.
 + rewrite idlsize_app, padding_size. 
-  exploit tr_init_size; eauto. intros EQ; rewrite EQ. lia.
+  exploit tr_init_size; eauto. intros EQ; rewrite EQ. omega.
   simpl. unfold lookup_composite in H. destruct (ge.(genv_cenv)!id) as [co'|] eqn:?; inv H.
   apply Z.le_trans with (sizeof_union ge (co_members co)).
   eapply union_field_size; eauto.
@@ -730,21 +731,21 @@ Local Opaque sizeof.
   destruct (co_alignof_two_p co) as [n EQ]. rewrite EQ. apply two_power_nat_pos.
 
 - destruct 1; simpl.
-+ lia.
++ omega.
 + rewrite Z.mul_comm.
   assert (0 <= sizeof ge ty * sz).
-  { apply Zmult_gt_0_le_0_compat. lia. generalize (sizeof_pos ge ty); lia. }
-  extlia.
+  { apply Zmult_gt_0_le_0_compat. omega. generalize (sizeof_pos ge ty); omega. }
+  xomega.
 + rewrite idlsize_app. 
   erewrite tr_init_size by eauto. 
   erewrite tr_init_array_size by eauto.
   ring.
 
 - destruct 1; simpl; intros.
-+ rewrite padding_size by auto. lia.
++ rewrite padding_size by auto. omega.
 + rewrite ! idlsize_app, padding_size. 
   erewrite tr_init_size by eauto. 
-  rewrite <- (tr_init_struct_size _ _ _ _ _ H0 H1). lia.
+  rewrite <- (tr_init_struct_size _ _ _ _ _ H0 H1). omega.
   unfold pos1. apply align_le. apply alignof_pos. 
 Qed.
 
@@ -806,7 +807,7 @@ Remark exec_init_array_length:
   forall m b ofs ty sz il m',
   exec_init_array m b ofs ty sz il m' -> sz >= 0.
 Proof.
-  induction 1; lia.
+  induction 1; omega.
 Qed.
 
 Lemma store_init_data_list_app:
@@ -847,10 +848,10 @@ Local Opaque sizeof.
   inv H3. simpl. erewrite transl_init_single_steps by eauto. auto.
 - (* array *)
   inv H1. replace (Z.max 0 sz) with sz in H7. eauto.
-  assert (sz >= 0) by (eapply exec_init_array_length; eauto). extlia.
+  assert (sz >= 0) by (eapply exec_init_array_length; eauto). xomega.
 - (* struct *)
   inv H3. unfold lookup_composite in H7. rewrite H in H7. inv H7. 
-  replace ofs with (ofs + 0) by lia. eauto.
+  replace ofs with (ofs + 0) by omega. eauto.
 - (* union *)
   inv H4. unfold lookup_composite in H9. rewrite H in H9. inv H9. rewrite H1 in H12; inv H12. 
   eapply store_init_data_list_app. eauto.
@@ -870,7 +871,7 @@ Local Opaque sizeof.
   inv H4. simpl in H3; inv H3. 
   eapply store_init_data_list_app. apply store_init_data_list_padding.
   rewrite padding_size.
-  replace (ofs + pos0 + (pos2 - pos0)) with (ofs + pos2) by lia.
+  replace (ofs + pos0 + (pos2 - pos0)) with (ofs + pos2) by omega.
   eapply store_init_data_list_app.
   eauto.
   rewrite (tr_init_size _ _ _ H9).
@@ -893,3 +894,4 @@ Proof.
   eapply build_composite_env_consistent. apply prog_comp_env_eq.
   eapply A; eauto. apply transl_init_spec; auto.
 Qed.
+

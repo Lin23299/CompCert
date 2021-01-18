@@ -302,14 +302,14 @@ Remark loc_arguments_32_charact:
   In p (loc_arguments_32 tyl ofs) -> forall_rpair (loc_argument_32_charact ofs) p.
 Proof.
   assert (X: forall ofs1 ofs2 l, loc_argument_32_charact ofs2 l -> ofs1 <= ofs2 -> loc_argument_32_charact ofs1 l).
-  { destruct l; simpl; intros; auto. destruct sl; auto. intuition lia. }
+  { destruct l; simpl; intros; auto. destruct sl; auto. intuition omega. }
   induction tyl as [ | ty tyl]; simpl loc_arguments_32; intros.
 - contradiction.
 - destruct H.
-+ destruct ty; subst p; simpl; lia.
++ destruct ty; subst p; simpl; omega.
 + apply IHtyl in H. generalize (typesize_pos ty); intros. destruct p; simpl in *.
-* eapply X; eauto; lia.
-* destruct H; split; eapply X; eauto; lia.
+* eapply X; eauto; omega.
+* destruct H; split; eapply X; eauto; omega.
 Qed.
 
 Remark loc_arguments_elf64_charact:
@@ -317,7 +317,7 @@ Remark loc_arguments_elf64_charact:
   In p (loc_arguments_elf64 tyl ir fr ofs) -> (2 | ofs) -> forall_rpair (loc_argument_elf64_charact ofs) p.
 Proof.
   assert (X: forall ofs1 ofs2 l, loc_argument_elf64_charact ofs2 l -> ofs1 <= ofs2 -> loc_argument_elf64_charact ofs1 l).
-  { destruct l; simpl; intros; auto. destruct sl; auto. intuition lia. }
+  { destruct l; simpl; intros; auto. destruct sl; auto. intuition omega. }
   assert (Y: forall ofs1 ofs2 p, forall_rpair (loc_argument_elf64_charact ofs2) p -> ofs1 <= ofs2 -> forall_rpair (loc_argument_elf64_charact ofs1) p).
   { destruct p; simpl; intuition eauto. }
   assert (Z: forall ofs, (2 | ofs) -> (2 | ofs + 2)).
@@ -334,8 +334,8 @@ Opaque list_nth_z.
   { intros. destruct (list_nth_z int_param_regs_elf64 ir) as [r|] eqn:E; destruct H1.
     subst. left. eapply list_nth_z_in; eauto.
     eapply IHtyl; eauto.
-    subst. split. lia. assumption.
-    eapply Y; eauto. lia. }
+    subst. split. omega. assumption.
+    eapply Y; eauto. omega. }
   assert (B: forall ty, In p
       match list_nth_z float_param_regs_elf64 fr with
       | Some ireg => One (R ireg) :: loc_arguments_elf64 tyl ir (fr + 1) ofs
@@ -345,8 +345,8 @@ Opaque list_nth_z.
   { intros. destruct (list_nth_z float_param_regs_elf64 fr) as [r|] eqn:E; destruct H1.
     subst. right. eapply list_nth_z_in; eauto.
     eapply IHtyl; eauto.
-    subst. split. lia. assumption.
-    eapply Y; eauto. lia. }
+    subst. split. omega. assumption.
+    eapply Y; eauto. omega. }
   destruct a; eauto.
 Qed.
 
@@ -355,7 +355,7 @@ Remark loc_arguments_win64_charact:
   In p (loc_arguments_win64 tyl r ofs) -> (2 | ofs) -> forall_rpair (loc_argument_win64_charact ofs) p.
 Proof.
   assert (X: forall ofs1 ofs2 l, loc_argument_win64_charact ofs2 l -> ofs1 <= ofs2 -> loc_argument_win64_charact ofs1 l).
-  { destruct l; simpl; intros; auto. destruct sl; auto. intuition lia. }
+  { destruct l; simpl; intros; auto. destruct sl; auto. intuition omega. }
   assert (Y: forall ofs1 ofs2 p, forall_rpair (loc_argument_win64_charact ofs2) p -> ofs1 <= ofs2 -> forall_rpair (loc_argument_win64_charact ofs1) p).
   { destruct p; simpl; intuition eauto. }
   assert (Z: forall ofs, (2 | ofs) -> (2 | ofs + 2)).
@@ -372,8 +372,8 @@ Opaque list_nth_z.
   { intros. destruct (list_nth_z int_param_regs_win64 r) as [r'|] eqn:E; destruct H1.
     subst. left. eapply list_nth_z_in; eauto.
     eapply IHtyl; eauto.
-    subst. split. lia. assumption.
-    eapply Y; eauto. lia. }
+    subst. split. omega. assumption.
+    eapply Y; eauto. omega. }
   assert (B: forall ty, In p
       match list_nth_z float_param_regs_win64 r with
       | Some ireg => One (R ireg) :: loc_arguments_win64 tyl (r + 1) ofs
@@ -383,8 +383,8 @@ Opaque list_nth_z.
   { intros. destruct (list_nth_z float_param_regs_win64 r) as [r'|] eqn:E; destruct H1.
     subst. right. eapply list_nth_z_in; eauto.
     eapply IHtyl; eauto.
-    subst. split. lia. assumption.
-    eapply Y; eauto. lia. }
+    subst. split. omega. assumption.
+    eapply Y; eauto. omega. }
   destruct a; eauto.
 Qed.
 
@@ -431,7 +431,7 @@ Proof.
   unfold loc_arguments; destruct Archi.ptr64; auto; destruct Archi.win64; auto.
 Qed.
 
-(** ** Normalization of function results and parameters *)
+(** ** Normalization of function results *)
 
 (** In the x86 ABI, a return value of type "char" is returned in
     register AL, leaving the top 24 bits of EAX unspecified.
@@ -444,8 +444,3 @@ Definition return_value_needs_normalization (t: rettype) : bool :=
   | Tint8signed | Tint8unsigned | Tint16signed | Tint16unsigned => true
   | _ => false
   end.
-
-(** Function parameters are passed in normalized form and do not need
-    to be re-normalized at function entry. *)
-
-Definition parameter_needs_normalization (t: rettype) := false.

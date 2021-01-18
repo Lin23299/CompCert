@@ -243,8 +243,8 @@ Remark sub_shift_amount:
 Proof.
   intros. unfold Int.ltu; apply zlt_true. rewrite Int.unsigned_repr_wordsize.
   apply Int.ltu_iwordsize_inv in H. apply Int.ltu_iwordsize_inv in H0.
-  unfold Int.sub; rewrite Int.unsigned_repr. lia.
-  generalize Int.wordsize_max_unsigned; lia.
+  unfold Int.sub; rewrite Int.unsigned_repr. omega.
+  generalize Int.wordsize_max_unsigned; omega.
 Qed.
 
 Theorem eval_shruimm:
@@ -260,13 +260,13 @@ Local Opaque Int.zwordsize.
 + destruct (Int.ltu n a) eqn:L2.
 * assert (L3: Int.ltu (Int.sub a n) Int.iwordsize = true).
   { apply sub_shift_amount; auto using a32_range.
-    apply Int.ltu_inv in L2. lia. }
+    apply Int.ltu_inv in L2. omega. }
   econstructor; split. EvalOp.
   destruct v1; simpl; auto. rewrite mk_amount32_eq, L3, a32_range by auto.
   simpl. rewrite L. rewrite Int.shru_shl, L2 by auto using a32_range. auto.
 * assert (L3: Int.ltu (Int.sub n a) Int.iwordsize = true).
   { apply sub_shift_amount; auto using a32_range.
-    unfold Int.ltu in L2. destruct zlt in L2; discriminate || lia. }
+    unfold Int.ltu in L2. destruct zlt in L2; discriminate || omega. }
   econstructor; split. EvalOp.
   destruct v1; simpl; auto. rewrite mk_amount32_eq, L3, a32_range by auto.
   simpl. rewrite L. rewrite Int.shru_shl, L2 by auto using a32_range. auto.
@@ -279,11 +279,11 @@ Local Opaque Int.zwordsize.
 * econstructor; split. EvalOp. rewrite mk_amount32_eq by auto.
   destruct v1; simpl; auto. rewrite ! L; simpl.
   set (s' := s - Int.unsigned n).
-  replace s with (s' + Int.unsigned n) by (unfold s'; lia).
-  rewrite Int.shru_zero_ext. auto. unfold s'; lia.
+  replace s with (s' + Int.unsigned n) by (unfold s'; omega).
+  rewrite Int.shru_zero_ext. auto. unfold s'; omega.
 * econstructor; split. EvalOp.
   destruct v1; simpl; auto. rewrite ! L; simpl.
-  rewrite Int.shru_zero_ext_0 by lia. auto. 
+  rewrite Int.shru_zero_ext_0 by omega. auto. 
 + econstructor; eauto using eval_shruimm_base.
 - intros; TrivialExists.
 Qed.
@@ -308,13 +308,13 @@ Proof.
 + destruct (Int.ltu n a) eqn:L2.
 * assert (L3: Int.ltu (Int.sub a n) Int.iwordsize = true).
   { apply sub_shift_amount; auto using a32_range.
-    apply Int.ltu_inv in L2. lia. }
+    apply Int.ltu_inv in L2. omega. }
   econstructor; split. EvalOp.
   destruct v1; simpl; auto. rewrite mk_amount32_eq, L3, a32_range by auto.
   simpl. rewrite L. rewrite Int.shr_shl, L2 by auto using a32_range. auto.
 * assert (L3: Int.ltu (Int.sub n a) Int.iwordsize = true).
   { apply sub_shift_amount; auto using a32_range.
-    unfold Int.ltu in L2. destruct zlt in L2; discriminate || lia. }
+    unfold Int.ltu in L2. destruct zlt in L2; discriminate || omega. }
   econstructor; split. EvalOp.
   destruct v1; simpl; auto. rewrite mk_amount32_eq, L3, a32_range by auto.
   simpl. rewrite L. rewrite Int.shr_shl, L2 by auto using a32_range. auto.
@@ -327,8 +327,8 @@ Proof.
 * InvBooleans. econstructor; split. EvalOp. rewrite mk_amount32_eq by auto.
   destruct v1; simpl; auto. rewrite ! L; simpl.
   set (s' := s - Int.unsigned n).
-  replace s with (s' + Int.unsigned n) by (unfold s'; lia).
-  rewrite Int.shr_sign_ext. auto. unfold s'; lia. unfold s'; lia.
+  replace s with (s' + Int.unsigned n) by (unfold s'; omega).
+  rewrite Int.shr_sign_ext. auto. unfold s'; omega. unfold s'; omega.
 * econstructor; split; [|eauto]. apply eval_shrimm_base; auto. EvalOp.
 + econstructor; eauto using eval_shrimm_base. 
 - intros; TrivialExists.
@@ -399,20 +399,20 @@ Proof.
   change (Int.ltu (Int.repr 32) Int64.iwordsize') with true; simpl.
   apply Val.lessdef_same. f_equal. 
   transitivity (Int.repr (Z.shiftr (Int.signed i * Int.signed i0) 32)).
-  unfold Int.mulhs; f_equal. rewrite Zshiftr_div_two_p by lia. reflexivity.
+  unfold Int.mulhs; f_equal. rewrite Zshiftr_div_two_p by omega. reflexivity.
   apply Int.same_bits_eq; intros n N.
   change Int.zwordsize with 32 in *.
-  assert (N1: 0 <= n < 64) by lia.
+  assert (N1: 0 <= n < 64) by omega.
   rewrite Int64.bits_loword by auto.
   rewrite Int64.bits_shr' by auto.
   change (Int.unsigned (Int.repr 32)) with 32. change Int64.zwordsize with 64.
-  rewrite zlt_true by lia.
+  rewrite zlt_true by omega.
   rewrite Int.testbit_repr by auto. 
-  unfold Int64.mul. rewrite Int64.testbit_repr by (change Int64.zwordsize with 64; lia).
+  unfold Int64.mul. rewrite Int64.testbit_repr by (change Int64.zwordsize with 64; omega).
   transitivity (Z.testbit (Int.signed i * Int.signed i0) (n + 32)).
-  rewrite Z.shiftr_spec by lia. auto.
+  rewrite Z.shiftr_spec by omega. auto.
   apply Int64.same_bits_eqm. apply Int64.eqm_mult; apply Int64.eqm_unsigned_repr. 
-  change Int64.zwordsize with 64; lia.
+  change Int64.zwordsize with 64; omega.
 Qed.
 
 Theorem eval_mulhu: binary_constructor_sound mulhu Val.mulhu.
@@ -425,20 +425,20 @@ Proof.
   change (Int.ltu (Int.repr 32) Int64.iwordsize') with true; simpl.
   apply Val.lessdef_same. f_equal. 
   transitivity (Int.repr (Z.shiftr (Int.unsigned i * Int.unsigned i0) 32)).
-  unfold Int.mulhu; f_equal. rewrite Zshiftr_div_two_p by lia. reflexivity.
+  unfold Int.mulhu; f_equal. rewrite Zshiftr_div_two_p by omega. reflexivity.
   apply Int.same_bits_eq; intros n N.
   change Int.zwordsize with 32 in *.
-  assert (N1: 0 <= n < 64) by lia.
+  assert (N1: 0 <= n < 64) by omega.
   rewrite Int64.bits_loword by auto.
   rewrite Int64.bits_shru' by auto.
   change (Int.unsigned (Int.repr 32)) with 32. change Int64.zwordsize with 64.
-  rewrite zlt_true by lia.
+  rewrite zlt_true by omega.
   rewrite Int.testbit_repr by auto. 
-  unfold Int64.mul. rewrite Int64.testbit_repr by (change Int64.zwordsize with 64; lia).
+  unfold Int64.mul. rewrite Int64.testbit_repr by (change Int64.zwordsize with 64; omega).
   transitivity (Z.testbit (Int.unsigned i * Int.unsigned i0) (n + 32)).
-  rewrite Z.shiftr_spec by lia. auto.
+  rewrite Z.shiftr_spec by omega. auto.
   apply Int64.same_bits_eqm. apply Int64.eqm_mult; apply Int64.eqm_unsigned_repr. 
-  change Int64.zwordsize with 64; lia.
+  change Int64.zwordsize with 64; omega.
 Qed.
 
 (** Integer conversions *)
@@ -451,7 +451,7 @@ Proof.
 - TrivialExists.
 - destruct (zlt (Int.unsigned a0) sz).
 + econstructor; split. EvalOp. destruct v1; simpl; auto. rewrite a32_range; simpl.
-  apply Val.lessdef_same. f_equal. rewrite Int.shl_zero_ext by lia. f_equal. lia.
+  apply Val.lessdef_same. f_equal. rewrite Int.shl_zero_ext by omega. f_equal. omega.
 + TrivialExists.
 - TrivialExists.
 Qed.
@@ -464,29 +464,29 @@ Proof.
 - TrivialExists.
 - destruct (zlt (Int.unsigned a0) sz).
 + econstructor; split. EvalOp. destruct v1; simpl; auto. rewrite a32_range; simpl.
-  apply Val.lessdef_same. f_equal. rewrite Int.shl_sign_ext by lia. f_equal. lia.
+  apply Val.lessdef_same. f_equal. rewrite Int.shl_sign_ext by omega. f_equal. omega.
 + TrivialExists.
 - TrivialExists.
 Qed.
 
 Theorem eval_cast8signed: unary_constructor_sound cast8signed (Val.sign_ext 8).
 Proof.
-  apply eval_sign_ext; lia. 
+  apply eval_sign_ext; omega. 
 Qed.
 
 Theorem eval_cast8unsigned: unary_constructor_sound cast8unsigned (Val.zero_ext 8).
 Proof.
-  apply eval_zero_ext; lia.
+  apply eval_zero_ext; omega.
 Qed.
 
 Theorem eval_cast16signed: unary_constructor_sound cast16signed (Val.sign_ext 16).
 Proof.
-  apply eval_sign_ext; lia. 
+  apply eval_sign_ext; omega. 
 Qed.
 
 Theorem eval_cast16unsigned: unary_constructor_sound cast16unsigned (Val.zero_ext 16).
 Proof.
-  apply eval_zero_ext; lia.
+  apply eval_zero_ext; omega.
 Qed.
 
 (** Bitwise not, and, or, xor *)
@@ -1029,13 +1029,7 @@ Theorem eval_addressing:
 Proof.
   intros until v. unfold addressing; case (addressing_match a); intros; InvEval.
 - econstructor; split. EvalOp. simpl; auto.
-- destruct (symbol_is_relocatable id).
-  + exists (Genv.symbol_address ge id Ptrofs.zero :: nil); split.
-    constructor. EvalOp. constructor.
-    simpl. rewrite <- Genv.shift_symbol_address_64 by auto.
-    rewrite Ptrofs.of_int64_to_int64, Ptrofs.add_zero_l by auto.
-    auto.
-  + econstructor; split. EvalOp. simpl; auto.
+- econstructor; split. EvalOp. simpl; auto.
 - econstructor; split. EvalOp. simpl. 
   destruct v1; try discriminate. rewrite <- H; auto.
 - econstructor; split. EvalOp. simpl. congruence.

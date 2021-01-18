@@ -69,7 +69,7 @@ Lemma transf_function_no_overflow:
   transf_function f = OK tf -> list_length_z tf.(fn_code) <= Ptrofs.max_unsigned.
 Proof.
   intros. monadInv H. destruct (zlt Ptrofs.max_unsigned (list_length_z x.(fn_code))); inv EQ0.
-  lia.
+  omega.
 Qed.
 
 Lemma exec_straight_exec:
@@ -401,8 +401,8 @@ Proof.
   split. unfold goto_label. rewrite P. rewrite H1. auto.
   split. rewrite Pregmap.gss. constructor; auto.
   rewrite Ptrofs.unsigned_repr. replace (pos' - 0) with pos' in Q.
-  auto. lia.
-  generalize (transf_function_no_overflow _ _ H0). lia.
+  auto. omega.
+  generalize (transf_function_no_overflow _ _ H0). omega.
   intros. apply Pregmap.gso; auto.
 Qed.
 
@@ -781,18 +781,16 @@ Opaque loadind.
   econstructor; eauto.
   instantiate (2 := tf); instantiate (1 := x).
   unfold nextinstr. rewrite Pregmap.gss.
-  rewrite set_res_other. simpl. rewrite undef_regs_other_2.
-  rewrite Pregmap.gso by auto with asmgen.
+  rewrite set_res_other. rewrite undef_regs_other_2.
   rewrite <- H1. simpl. econstructor; eauto.
   eapply code_tail_next_int; eauto.
   rewrite preg_notin_charact. intros. auto with asmgen.
   auto with asmgen.
   apply agree_nextinstr. eapply agree_set_res; auto.
-  eapply agree_undef_regs; eauto.
-  intros. simpl. rewrite undef_regs_other_2; auto. apply Pregmap.gso. auto with asmgen.
+  eapply agree_undef_regs; eauto. intros; apply undef_regs_other_2; auto.
   congruence.
   intros. Simpl. rewrite set_res_other by auto.
-  simpl. rewrite undef_regs_other_2; auto with asmgen.
+  rewrite undef_regs_other_2; auto with asmgen.
 
 - (* Mgoto *)
   assert (f0 = f) by congruence. subst f0.
@@ -926,14 +924,14 @@ Local Transparent destroyed_by_jumptable.
   simpl const_low. rewrite ATLR. erewrite storev_offset_ptr by eexact P. auto. congruence.
   auto. auto. auto.
   left; exists (State rs5 m3'); split.
-  eapply exec_straight_steps_1; eauto. lia. constructor.
+  eapply exec_straight_steps_1; eauto. omega. constructor.
   econstructor; eauto.
   change (rs5 PC) with (Val.offset_ptr (Val.offset_ptr (Val.offset_ptr (Val.offset_ptr (rs0 PC) Ptrofs.one) Ptrofs.one) Ptrofs.one) Ptrofs.one).
   rewrite ATPC. simpl. constructor; eauto.
-  eapply code_tail_next_int. lia.
-  eapply code_tail_next_int. lia.
-  eapply code_tail_next_int. lia.
-  eapply code_tail_next_int. lia.
+  eapply code_tail_next_int. omega.
+  eapply code_tail_next_int. omega.
+  eapply code_tail_next_int. omega.
+  eapply code_tail_next_int. omega.
   constructor.
   unfold rs5, rs4, rs3, rs2.
   apply agree_nextinstr. apply agree_nextinstr.
@@ -958,7 +956,7 @@ Local Transparent destroyed_by_jumptable.
 
 - (* return *)
   inv STACKS. simpl in *.
-  right. split. lia. split. auto.
+  right. split. omega. split. auto.
   rewrite <- ATPC in H5.
   econstructor; eauto.
   congruence.

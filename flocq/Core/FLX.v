@@ -48,7 +48,7 @@ Proof.
 intros k.
 unfold FLX_exp.
 generalize prec_gt_0.
-repeat split ; intros ; lia.
+repeat split ; intros ; omega.
 Qed.
 
 Theorem FIX_format_FLX :
@@ -212,7 +212,7 @@ Proof.
 case (negligible_exp_spec FLX_exp).
 intros _; reflexivity.
 intros n H2; contradict H2.
-unfold FLX_exp; unfold Prec_gt_0 in prec_gt_0_; lia.
+unfold FLX_exp; unfold Prec_gt_0 in prec_gt_0_; omega.
 Qed.
 
 Theorem generic_format_FLX_1 :
@@ -221,13 +221,13 @@ Proof.
 unfold generic_format, scaled_mantissa, cexp, F2R; simpl.
 rewrite Rmult_1_l, (mag_unique beta 1 1).
 { unfold FLX_exp.
-  rewrite <- IZR_Zpower; [|unfold Prec_gt_0 in prec_gt_0_; lia].
-  rewrite Ztrunc_IZR, IZR_Zpower; [|unfold Prec_gt_0 in prec_gt_0_; lia].
+  rewrite <- IZR_Zpower; [|unfold Prec_gt_0 in prec_gt_0_; omega].
+  rewrite Ztrunc_IZR, IZR_Zpower; [|unfold Prec_gt_0 in prec_gt_0_; omega].
   rewrite <- bpow_plus.
   now replace (_ + _)%Z with Z0 by ring. }
 rewrite Rabs_R1; simpl; split; [now right|].
 unfold Z.pow_pos; simpl; rewrite Zmult_1_r; apply IZR_lt.
-assert (H := Zle_bool_imp_le _ _ (radix_prop beta)); lia.
+assert (H := Zle_bool_imp_le _ _ (radix_prop beta)); omega.
 Qed.
 
 Theorem ulp_FLX_0: (ulp beta FLX_exp 0 = 0)%R.
@@ -356,7 +356,7 @@ destruct NE_prop as [H|H].
 now left.
 right.
 unfold FLX_exp.
-split ; lia.
+split ; omega.
 Qed.
 
 End RND_FLX.

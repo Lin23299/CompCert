@@ -85,10 +85,6 @@ Global Opaque ptr64 big_endian splitlong
               fma_order fma_invalid_mul_is_nan
               float_of_single_preserves_sNaN.
 
-(** Which ABI to implement *)
+(** Whether to generate position-independent code or not *)
 
-Inductive abi_kind: Type :=
-  | AAPCS64 (**r ARM's standard as used in Linux and other ELF platforms *)
-  | Apple.  (**r the variant used in macOS and iOS *)
-
-Parameter abi: abi_kind.
+Parameter pic_code: unit -> bool.

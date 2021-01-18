@@ -355,12 +355,12 @@ Proof.
   intros. rewrite <- sep_assoc. eapply sep_imp; eauto.
   split; simpl; intros.
 - intuition auto.
-+ lia.
-+ apply H5; lia.
-+ lia.
-+ apply H5; lia.
-+ red; simpl; intros; lia.
-- intuition lia.
++ omega.
++ apply H5; omega.
++ omega.
++ apply H5; omega.
++ red; simpl; intros; omega.
+- intuition omega.
 Qed.
 
 Lemma range_drop_left:
@@ -392,12 +392,12 @@ Proof.
   assert (mid <= align mid al) by (apply align_le; auto).
   split; simpl; intros.
 - intuition auto.
-+ lia.
-+ apply H7; lia.
-+ lia.
-+ apply H7; lia.
-+ red; simpl; intros; lia.
-- intuition lia.
++ omega.
++ apply H7; omega.
++ omega.
++ apply H7; omega.
++ red; simpl; intros; omega.
+- intuition omega.
 Qed.
 
 Lemma range_preserved:
@@ -472,6 +472,7 @@ Proof.
   intros; red; intros. apply (C b i); simpl; auto.
 Qed.
 
+
 Lemma storev_rule:
   forall chunk m b ofs v (spec1 spec: val -> Prop) P,
   m |= contains chunk b ofs spec1 ** P ->
@@ -493,7 +494,7 @@ Proof.
   split; [|split].
 - assert (Mem.valid_access m chunk b ofs Freeable).
   { split; auto. red; auto. }
-  split. generalize (size_chunk_pos chunk). unfold Ptrofs.max_unsigned. lia.
+  split. generalize (size_chunk_pos chunk). unfold Ptrofs.max_unsigned. omega.
   split. auto.
 + destruct (Mem.valid_access_load m chunk b ofs) as [v LOAD].
   eauto with mem.
@@ -616,7 +617,7 @@ Next Obligation.
   assert (IMG: forall b1 b2 delta ofs k p,
            j b1 = Some (b2, delta) -> Mem.perm m0 b1 ofs k p -> img b2 (ofs + delta)).
   { intros. red. exists b1, delta; split; auto.
-    replace (ofs + delta - delta) with ofs by lia.
+    replace (ofs + delta - delta) with ofs by omega.
     eauto with mem. }
   destruct H. constructor.
 - destruct mi_inj. constructor; intros.
@@ -668,7 +669,7 @@ Proof.
   intros; red; intros. eelim C; eauto. simpl.
   exists b1, delta; split; auto. destruct VALID as [V1 V2].
   apply Mem.perm_cur_max. apply Mem.perm_implies with Writable; auto with mem.
-  apply V1. lia.
+  apply V1. omega.
 - red; simpl; intros. destruct H1 as (b0 & delta0 & U & V).
   eelim C; eauto. simpl. exists b0, delta0; eauto with mem.
 Qed.
@@ -690,7 +691,7 @@ Lemma alloc_parallel_rule:
   /\ (forall b, b <> b1 -> j' b = j b).
 Proof.
   intros until delta; intros SEP ALLOC1 ALLOC2 ALIGN LO HI RANGE1 RANGE2 RANGE3.
-  assert (RANGE4: lo <= hi) by extlia.
+  assert (RANGE4: lo <= hi) by xomega.
   assert (FRESH1: ~Mem.valid_block m1 b1) by (eapply Mem.fresh_block_alloc; eauto).
   assert (FRESH2: ~Mem.valid_block m2 b2) by (eapply Mem.fresh_block_alloc; eauto).
   destruct SEP as (INJ & SP & DISJ). simpl in INJ.
@@ -698,10 +699,10 @@ Proof.
 - eapply Mem.alloc_right_inject; eauto.
 - eexact ALLOC1.
 - instantiate (1 := b2). eauto with mem.
-- instantiate (1 := delta). extlia.
-- intros. assert (0 <= ofs < sz2) by (eapply Mem.perm_alloc_3; eauto). lia.
+- instantiate (1 := delta). xomega.
+- intros. assert (0 <= ofs < sz2) by (eapply Mem.perm_alloc_3; eauto). omega.
 - intros. apply Mem.perm_implies with Freeable; auto with mem.
-  eapply Mem.perm_alloc_2; eauto. extlia.
+  eapply Mem.perm_alloc_2; eauto. xomega.
 - red; intros. apply Z.divide_trans with 8; auto.
   exists (8 / align_chunk chunk). destruct chunk; reflexivity.
 - intros. elim FRESH2. eapply Mem.valid_block_inject_2; eauto.
@@ -709,19 +710,19 @@ Proof.
   exists j'; split; auto.
   rewrite <- ! sep_assoc.
   split; [|split].
-+ simpl. intuition auto; try (unfold Ptrofs.max_unsigned in *; lia).
++ simpl. intuition auto; try (unfold Ptrofs.max_unsigned in *; omega).
 * apply Mem.perm_implies with Freeable; auto with mem.
-  eapply Mem.perm_alloc_2; eauto. lia.
+  eapply Mem.perm_alloc_2; eauto. omega.
 * apply Mem.perm_implies with Freeable; auto with mem.
-  eapply Mem.perm_alloc_2; eauto. lia.
-* red; simpl; intros. destruct H1, H2. lia.
+  eapply Mem.perm_alloc_2; eauto. omega.
+* red; simpl; intros. destruct H1, H2. omega.
 * red; simpl; intros.
   assert (b = b2) by tauto. subst b.
   assert (0 <= ofs < lo \/ hi <= ofs < sz2) by tauto. clear H1.
   destruct H2 as (b0 & delta0 & D & E).
   eapply Mem.perm_alloc_inv in E; eauto.
   destruct (eq_block b0 b1).
-  subst b0. rewrite J2 in D. inversion D; clear D; subst delta0. extlia.
+  subst b0. rewrite J2 in D. inversion D; clear D; subst delta0. xomega.
   rewrite J3 in D by auto. elim FRESH2. eapply Mem.valid_block_inject_2; eauto.
 + apply (m_invar P) with m2; auto. eapply Mem.alloc_unchanged_on; eauto.
 + red; simpl; intros.
@@ -753,11 +754,11 @@ Proof.
   simpl in E.
   assert (PERM: Mem.range_perm m2 b2 0 sz2 Cur Freeable).
   { red; intros.
-    destruct (zlt ofs lo). apply J; lia.
-    destruct (zle hi ofs). apply K; lia.
-    replace ofs with ((ofs - delta) + delta) by lia.
+    destruct (zlt ofs lo). apply J; omega.
+    destruct (zle hi ofs). apply K; omega.
+    replace ofs with ((ofs - delta) + delta) by omega.
     eapply Mem.perm_inject; eauto.
-    eapply Mem.free_range_perm; eauto. extlia.
+    eapply Mem.free_range_perm; eauto. xomega.
   }
   destruct (Mem.range_perm_free _ _ _ _ PERM) as [m2' FREE].
   exists m2'; split; auto. split; [|split].
@@ -768,16 +769,16 @@ Proof.
   destruct (zle hi (ofs + delta0)). intuition auto.
   destruct (eq_block b0 b1).
 * subst b0. rewrite H1 in H; inversion H; clear H; subst delta0.
-  eelim (Mem.perm_free_2 m1); eauto. extlia.
+  eelim (Mem.perm_free_2 m1); eauto. xomega.
 * exploit Mem.mi_no_overlap; eauto.
   apply Mem.perm_max with k. apply Mem.perm_implies with p; auto with mem.
   eapply Mem.perm_free_3; eauto.
   apply Mem.perm_cur_max. apply Mem.perm_implies with Freeable; auto with mem.
   eapply (Mem.free_range_perm m1); eauto.
-  instantiate (1 := ofs + delta0 - delta). extlia.
-  intros [X|X]. congruence. lia.
+  instantiate (1 := ofs + delta0 - delta). xomega.
+  intros [X|X]. congruence. omega.
 + simpl. exists b0, delta0; split; auto.
-  replace (ofs + delta0 - delta0) with ofs by lia.
+  replace (ofs + delta0 - delta0) with ofs by omega.
   apply Mem.perm_max with k. apply Mem.perm_implies with p; auto with mem.
   eapply Mem.perm_free_3; eauto.
 - apply (m_invar P) with m2; auto.
@@ -787,7 +788,7 @@ Proof.
   destruct (zle hi i). intuition auto.
   right; exists b1, delta; split; auto.
   apply Mem.perm_cur_max. apply Mem.perm_implies with Freeable; auto with mem.
-  eapply Mem.free_range_perm; eauto. extlia.
+  eapply Mem.free_range_perm; eauto. xomega.
 - red; simpl; intros. eelim C; eauto.
   simpl. right. destruct H as (b0 & delta0 & U & V).
   exists b0, delta0; split; auto.
@@ -796,20 +797,20 @@ Qed.
 
 (** Preservation of a global environment by a memory injection *)
 
-Inductive globalenv_preserved {F V: Type} (ge: Genv.t F V) (j: meminj) (bound: block) : Prop :=
+Inductive globalenv_preserved {F V: Type} (ge: Genv.t F V) (j: meminj) (support: sup) : Prop :=
   | globalenv_preserved_intro
-      (DOMAIN: forall b, Plt b bound -> j b = Some(b, 0))
-      (IMAGE: forall b1 b2 delta, j b1 = Some(b2, delta) -> Plt b2 bound -> b1 = b2)
-      (SYMBOLS: forall id b, Genv.find_symbol ge id = Some b -> Plt b bound)
-      (FUNCTIONS: forall b fd, Genv.find_funct_ptr ge b = Some fd -> Plt b bound)
-      (VARINFOS: forall b gv, Genv.find_var_info ge b = Some gv -> Plt b bound).
+      (DOMAIN: forall b, In b support -> j b = Some(b, 0))
+      (IMAGE: forall b1 b2 delta, j b1 = Some(b2, delta) -> In b2 support -> b1 = b2)
+      (SYMBOLS: forall id b, Genv.find_symbol ge id = Some b -> In b support)
+      (FUNCTIONS: forall b fd, Genv.find_funct_ptr ge b = Some fd -> In b support)
+      (VARINFOS: forall b gv, Genv.find_var_info ge b = Some gv -> In b support).
 
 Program Definition globalenv_inject {F V: Type} (ge: Genv.t F V) (j: meminj) : massert := {|
-  m_pred := fun m => exists bound, Ple bound (Mem.nextblock m) /\ globalenv_preserved ge j bound;
+  m_pred := fun m => exists support, Mem.sup_include support (Mem.support m) /\ globalenv_preserved ge j support;
   m_footprint := fun b ofs => False
 |}.
 Next Obligation.
-  rename H into bound. exists bound; split; auto. eapply Ple_trans; eauto. eapply Mem.unchanged_on_nextblock; eauto.
+  rename H into bound. exists bound; split; auto. eapply Mem.sup_include_trans; eauto. eapply Mem.unchanged_on_support; eauto.
 Qed.
 Next Obligation.
   tauto.
@@ -834,14 +835,14 @@ Lemma globalenv_inject_incr:
   m |= globalenv_inject ge j ** P ->
   m |= globalenv_inject ge j' ** P.
 Proof.
-  intros. destruct H1 as (A & B & C). destruct A as (bound & D & E).
+  intros. destruct H1 as (A & B & C). destruct A as (support & D & E).
   split; [|split]; auto.
-  exists bound; split; auto.
+  exists support; split; auto.
   inv E; constructor; intros.
 - eauto.
 - destruct (j b1) as [[b0 delta0]|] eqn:JB1.
 + erewrite H in H1 by eauto. inv H1. eauto.
-+ exploit H0; eauto. intros (X & Y). elim Y. apply Pos.lt_le_trans with bound; auto.
++ exploit H0; eauto. intros (X & Y). elim Y. apply D. auto.
 - eauto.
 - eauto.
 - eauto.

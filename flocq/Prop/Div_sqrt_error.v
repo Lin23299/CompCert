@@ -42,7 +42,9 @@ rewrite H; apply generic_format_0.
 rewrite Hx, Hy, <- F2R_plus.
 apply generic_format_F2R.
 intros _.
-change (F2R _) with (F2R (Fplus fx fy)).
+case_eq (Fplus fx fy).
+intros mz ez Hz.
+rewrite <- Hz.
 apply Z.le_trans with (Z.min (Fexp fx) (Fexp fy)).
 rewrite F2R_plus, <- Hx, <- Hy.
 unfold cexp.
@@ -50,7 +52,7 @@ apply Z.le_trans with (1:=Hfexp _).
 apply Zplus_le_reg_l with prec; ring_simplify.
 apply mag_le_bpow with (1 := H).
 now apply Z.min_case.
-rewrite <- Fexp_Fplus.
+rewrite <- Fexp_Fplus, Hz.
 apply Z.le_refl.
 Qed.
 
@@ -98,7 +100,7 @@ apply Rlt_le_trans with (1 := Heps1).
 change 1%R with (bpow 0).
 apply bpow_le.
 generalize (prec_gt_0 prec).
-clear ; lia.
+clear ; omega.
 rewrite Rmult_1_r.
 rewrite Hx2, <- Hx1.
 unfold cexp.
@@ -191,7 +193,7 @@ now apply IZR_lt.
 rewrite <- Rmult_assoc, Rinv_r, Rmult_1_l.
 apply Rle_trans with (bpow (-1)).
 apply bpow_le.
-lia.
+omega.
 replace (2 * (-1 + 5 / 4))%R with (/2)%R by field.
 apply Rinv_le.
 now apply IZR_lt.
@@ -278,11 +280,11 @@ apply Rle_not_lt.
 rewrite <- Hr1.
 apply abs_round_ge_generic...
 apply generic_format_bpow.
-unfold FLX_exp; lia.
+unfold FLX_exp; omega.
 apply Es.
 apply Rlt_le_trans with (1:=H).
 apply bpow_le.
-lia.
+omega.
 now apply Rlt_le.
 Qed.
 
@@ -317,7 +319,7 @@ rewrite <- bpow_plus; apply bpow_le; unfold e; set (mxm1 := (_ - 1)%Z).
 replace (_ * _)%Z with (2 * (mxm1 / 2) + mxm1 mod 2 - mxm1 mod 2)%Z by ring.
 rewrite <- Z.div_mod; [|now simpl].
 apply (Zplus_le_reg_r _ _ (mxm1 mod 2 - mag beta x)%Z).
-unfold mxm1; destruct (Z.mod_bound_or (mag beta x - 1) 2); lia.
+unfold mxm1; destruct (Z.mod_bound_or (mag beta x - 1) 2); omega.
 Qed.
 
 Notation u_ro := (u_ro beta prec).
@@ -344,7 +346,7 @@ assert (Hulp1p2eps : (ulp beta (FLX_exp prec) (1 + 2 * u_ro) = 2 * u_ro)%R).
   rewrite succ_FLX_1, mag_1, bpow_1, <- H2eps; simpl.
   apply (Rlt_le_trans _ 2); [apply Rplus_lt_compat_l|].
   { unfold u_ro; rewrite <-Rmult_assoc, Rinv_r, Rmult_1_l; [|lra].
-    change R1 with (bpow 0); apply bpow_lt; lia. }
+    change R1 with (bpow 0); apply bpow_lt; omega. }
   apply IZR_le, Zle_bool_imp_le, radix_prop. }
 assert (Hsucc1p2eps :
           (succ beta (FLX_exp prec) (1 + 2 * u_ro) = 1 + 4 * u_ro)%R).
@@ -381,7 +383,7 @@ ring_simplify; apply Rsqr_incr_0_var.
   apply Rmult_le_pos; [|now apply pow_le].
   assert (Heps_le_half : (u_ro <= 1 / 2)%R).
   { unfold u_ro, Rdiv; rewrite Rmult_comm; apply Rmult_le_compat_r; [lra|].
-    change 1%R with (bpow 0); apply bpow_le; lia. }
+    change 1%R with (bpow 0); apply bpow_le; omega. }
   apply (Rle_trans _ (-8 * u_ro + 4)); [lra|].
   apply Rplus_le_compat_r, Rmult_le_compat_r; [apply Pu_ro|].
   now assert (H : (0 <= u_ro ^ 2)%R); [apply pow2_ge_0|lra]. }
@@ -445,13 +447,13 @@ destruct (sqrt_error_N_FLX_aux2 _ Fmu HmuGe1) as [Hmu'|[Hmu'|Hmu']].
   { rewrite Rminus_diag_eq, Rabs_R0; [|now simpl].
     now apply Rmult_le_pos; [|apply Rabs_pos]. }
   apply generic_format_bpow'; [now apply FLX_exp_valid|].
-  unfold FLX_exp; lia. }
+  unfold FLX_exp; omega. }
 { assert (Hsqrtmu : (1 <= sqrt mu < 1 + u_ro)%R); [rewrite Hmu'; split|].
   { rewrite <- sqrt_1 at 1; apply sqrt_le_1_alt; lra. }
   { rewrite <- sqrt_square; [|lra]; apply sqrt_lt_1_alt; split; [lra|].
     ring_simplify; assert (0 < u_ro ^ 2)%R; [apply pow_lt|]; lra. }
   assert (Fbpowe : generic_format beta (FLX_exp prec) (bpow e)).
-  { apply generic_format_bpow; unfold FLX_exp; lia. }
+  { apply generic_format_bpow; unfold FLX_exp; omega. }
   assert (Hrt : rt = bpow e :> R).
   { unfold rt; fold t; rewrite Ht; simpl; apply Rle_antisym.
     { apply round_N_le_midp; [now apply FLX_exp_valid|exact Fbpowe|].
@@ -493,7 +495,7 @@ assert (Hulpt : (ulp beta (FLX_exp prec) t = 2 * u_ro * bpow e)%R).
       { apply sqrt_lt_1_alt; split; [lra|].
         apply (Rlt_le_trans _ _ _ HmuLtsqradix); right.
         now unfold bpow, Z.pow_pos; simpl; rewrite Zmult_1_r, mult_IZR. }
-      apply IZR_le, (Z.le_trans _ 2), Zle_bool_imp_le, radix_prop; lia. }
+      apply IZR_le, (Z.le_trans _ 2), Zle_bool_imp_le, radix_prop; omega. }
     rewrite Hmagt; ring. }
   rewrite Ht; apply Rmult_lt_0_compat; [|now apply bpow_gt_0].
   now apply (Rlt_le_trans _ 1); [lra|rewrite <- sqrt_1; apply sqrt_le_1_alt]. }
@@ -654,7 +656,7 @@ apply Fourier_util.Rle_mult_inv_pos; assumption.
 case (Zle_lt_or_eq 0 n); try exact H.
 clear H; intros H.
 case (Zle_lt_or_eq 1 n).
-lia.
+omega.
 clear H; intros H.
 set (ex := cexp beta fexp x).
 set (ey := cexp beta fexp y).
@@ -713,7 +715,7 @@ rewrite Rinv_l, Rmult_1_r, Rmult_1_l.
 assert (mag beta x < mag beta y)%Z.
 case (Zle_or_lt (mag beta y) (mag beta x)); try easy.
 intros J; apply monotone_exp in J; clear -J Hexy.
-unfold ex, ey, cexp in Hexy; lia.
+unfold ex, ey, cexp in Hexy; omega.
 left; apply lt_mag with beta; easy.
 (* n = 1 -> Sterbenz + rnd_small *)
 intros Hn'; fold n; rewrite <- Hn'.

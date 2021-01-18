@@ -18,7 +18,6 @@
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib/compcert'
-mandir='$(PREFIX)/share/man'
 coqdevdir='$(PREFIX)/lib/compcert/coq'
 toolprefix=''
 target=''
@@ -26,6 +25,7 @@ has_runtime_lib=true
 has_standard_headers=true
 clightgen=false
 install_coqdev=false
+responsefile="gnu"
 ignore_coq_version=false
 library_Flocq=local
 library_MenhirLib=local
@@ -58,7 +58,6 @@ Supported targets:
   rv32-linux           (RISC-V 32 bits, Linux)
   rv64-linux           (RISC-V 64 bits, Linux)
   aarch64-linux        (AArch64, i.e. ARMv8 in 64-bit mode, Linux)
-  aarch64-macosx       (AArch64, i.e. Apple silicon, MacOS)
   manual               (edit configuration file by hand)
 
 For x86 targets, the "x86_32-" prefix can also be written "ia32-" or "i386-".
@@ -86,7 +85,6 @@ Options:
   -prefix <dir>        Install in <dir>/bin and <dir>/lib/compcert
   -bindir <dir>        Install binaries in <dir>
   -libdir <dir>        Install libraries in <dir>
-  -mandir <dir>        Install man pages in <dir>
   -coqdevdir <dir>     Install Coq development (.vo files) in <dir>
   -toolprefix <pref>   Prefix names of tools ("gcc", etc) with <pref>
   -use-external-Flocq  Use an already-installed Flocq library
@@ -116,8 +114,6 @@ while : ; do
         bindir="$2"; shift;;
     -libdir|--libdir)
         libdir="$2"; shift;;
-    -mandir|--mandir)
-        mandir="$2"; shift;;
     -coqdevdir|--coqdevdir)
         coqdevdir="$2"; install_coqdev=true; shift;;
     -toolprefix|--toolprefix)
@@ -209,24 +205,13 @@ target=${target#[a-zA-Z0-9]*-}
 
 
 # Per-target configuration
-# We start with reasonable defaults,
-# then redefine the required parameters for each target,
-# then check for missing parameters and derive values for them.
-
 asm_supports_cfi=""
-cc="${toolprefix}gcc"
-cc_options=""
-casm="${toolprefix}gcc"
-casm_options="-c"
+casm_options=""
 casmruntime=""
-clinker="${toolprefix}gcc"
-clinker_options=""
 clinker_needs_no_pie=true
-cprepro="${toolprefix}gcc"
-cprepro_options="-E"
-archiver="${toolprefix}ar rcs"
-libmath="-lm"
-responsefile="gnu"
+clinker_options=""
+cprepro_options=""
+
 
 #
 # ARM Target Configuration
@@ -246,7 +231,13 @@ if test "$arch" = "arm"; then
         exit 2;;
   esac
 
+  casm="${toolprefix}gcc"
+  casm_options="-c"
+  cc="${toolprefix}gcc"
+  clinker="${toolprefix}gcc"
+  cprepro="${toolprefix}gcc"
   cprepro_options="-std=c99 -U__GNUC__ '-D__REDIRECT(name,proto,alias)=name proto' '-D__REDIRECT_NTH(name,proto,alias)=name proto' -E"
+  libmath="-lm"
   system="linux"
 fi
 
@@ -284,14 +275,19 @@ if test "$arch" = "powerpc"; then
         clinker="${toolprefix}dcc"
         cprepro="${toolprefix}dcc"
         cprepro_options="-E -D__GNUC__"
-        archiver="${toolprefix}dar -q"
         libmath="-lm"
         system="diab"
         responsefile="diab"
         ;;
     *)
+        casm="${toolprefix}gcc"
+        casm_options="-c"
         casmruntime="${toolprefix}gcc -c -Wa,-mregnames"
+        cc="${toolprefix}gcc"
+        clinker="${toolprefix}gcc"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -U__GNUC__ -E"
+        libmath="-lm"
         system="linux"
         ;;
   esac
@@ -306,26 +302,38 @@ if test "$arch" = "x86" -a "$bitsize" = "32"; then
   case "$target" in
     bsd)
         abi="standard"
-        cc_options="-m32"
+        casm="${toolprefix}gcc"
         casm_options="-m32 -c"
+        cc="${toolprefix}gcc -m32"
+        clinker="${toolprefix}gcc"
         clinker_options="-m32"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m32 -U__GNUC__ -E"
+        libmath="-lm"
         system="bsd"
         ;;
     cygwin)
         abi="standard"
-        cc_options="-m32"
+        casm="${toolprefix}gcc"
         casm_options="-m32 -c"
+        cc="${toolprefix}gcc -m32"
+        clinker="${toolprefix}gcc"
         clinker_options="-m32"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m32 -U__GNUC__ '-D__attribute__(x)=' -E"
+        libmath="-lm"
         system="cygwin"
         ;;
     linux)
         abi="standard"
-        cc_options="-m32"
+        casm="${toolprefix}gcc"
         casm_options="-m32 -c"
+        cc="${toolprefix}gcc -m32"
+        clinker="${toolprefix}gcc"
         clinker_options="-m32"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m32 -U__GNUC__ -E"
+        libmath="-lm"
         system="linux"
         ;;
     *)
@@ -343,36 +351,53 @@ if test "$arch" = "x86" -a "$bitsize" = "64"; then
   case "$target" in
     bsd)
         abi="standard"
-        cc_options="-m64"
+        casm="${toolprefix}gcc"
         casm_options="-m64 -c"
+        cc="${toolprefix}gcc -m64"
+        clinker="${toolprefix}gcc"
         clinker_options="-m64"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m64 -U__GNUC__ -E"
+        libmath="-lm"
         system="bsd"
         ;;
     linux)
         abi="standard"
-        cc_options="-m64"
+        casm="${toolprefix}gcc"
         casm_options="-m64 -c"
+        cc="${toolprefix}gcc -m64"
+        clinker="${toolprefix}gcc"
         clinker_options="-m64"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m64 -U__GNUC__ -E"
+        libmath="-lm"
         system="linux"
         ;;
     macosx)
+        # kernel major versions count upwards from 4 for OSX 10.0 to 15 for OSX 10.11
+        kernel_major=`uname -r | cut -d "." -f 1`
+
         abi="macosx"
-        cc_options="-arch x86_64"
+        casm="${toolprefix}gcc"
         casm_options="-arch x86_64 -c"
-        clinker_options="-arch x86_64"
+        cc="${toolprefix}gcc -arch x86_64"
+        clinker="${toolprefix}gcc"
         clinker_needs_no_pie=false
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -arch x86_64 -U__GNUC__ -U__clang__ -U__BLOCKS__ '-D__attribute__(x)=' '-D__asm(x)=' '-D_Nullable=' '-D_Nonnull=' -E"
         libmath=""
         system="macosx"
         ;;
     cygwin)
         abi="standard"
-        cc_options="-m64"
+        casm="${toolprefix}gcc"
         casm_options="-m64 -c"
+        cc="${toolprefix}gcc -m64"
+        clinker="${toolprefix}gcc"
         clinker_options="-m64"
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -m64 -U__GNUC__ '-D__attribute__(x)=' -E"
+        libmath="-lm"
         system="cygwin"
         ;;
     *)
@@ -393,10 +418,14 @@ if test "$arch" = "riscV"; then
     model_options="-march=rv32imafd -mabi=ilp32d"
   fi
   abi="standard"
-  cc_options="$model_options"
+  casm="${toolprefix}gcc"
   casm_options="$model_options -c"
+  cc="${toolprefix}gcc $model_options"
+  clinker="${toolprefix}gcc"
   clinker_options="$model_options"
+  cprepro="${toolprefix}gcc"
   cprepro_options="$model_options -std=c99 -U__GNUC__ -E"
+  libmath="-lm"
   system="linux"
 fi
 
@@ -407,20 +436,15 @@ if test "$arch" = "aarch64"; then
   case "$target" in
     linux)
         abi="standard"
+        casm="${toolprefix}gcc"
+        casm_options="-c"
+        cc="${toolprefix}gcc"
+        clinker="${toolprefix}gcc"
+        clinker_options=""
+        cprepro="${toolprefix}gcc"
         cprepro_options="-std=c99 -U__GNUC__ -E"
+        libmath="-lm"
         system="linux";;
-    macosx)
-        abi="apple"
-        casm="${toolprefix}cc"
-        casm_options="-c -arch arm64"
-        cc="${toolprefix}cc -arch arm64"
-        clinker="${toolprefix}cc"
-        clinker_needs_no_pie=false
-        cprepro="${toolprefix}cc"
-        cprepro_options="-std=c99 -arch arm64 -U__GNUC__ -U__clang__ -U__BLOCKS__ '-D__attribute__(x)=' '-D__asm(x)=' '-D_Nullable=' '-D_Nonnull=' -E"
-        libmath=""
-        system="macosx"
-        ;;
     *)
         echo "Error: invalid eabi/system '$target' for architecture AArch64." 1>&2
         echo "$usage" 1>&2
@@ -503,19 +527,19 @@ missingtools=false
 echo "Testing Coq... " | tr -d '\n'
 coq_ver=$(${COQBIN}coqc -v 2>/dev/null | sed -n -e 's/The Coq Proof Assistant, version \([^ ]*\).*$/\1/p')
 case "$coq_ver" in
-  8.8.0|8.8.1|8.8.2|8.9.0|8.9.1|8.10.0|8.10.1|8.10.2|8.11.0|8.11.1|8.11.2|8.12.0|8.12.1|8.12.2|8.13.0)
+  8.8.0|8.8.1|8.8.2|8.9.0|8.9.1|8.10.0|8.10.1|8.10.2|8.11.0|8.11.1|8.11.2|8.12.0|8.12.1)
         echo "version $coq_ver -- good!";;
   ?*)
         echo "version $coq_ver -- UNSUPPORTED"
         if $ignore_coq_version; then
             echo "Warning: this version of Coq is unsupported, proceed at your own risks."
         else
-            echo "Error: CompCert requires a version of Coq between 8.8.0 and 8.13.0"
+            echo "Error: CompCert requires a version of Coq between 8.8.0 and 8.12.1"
             missingtools=true
         fi;;
   "")
         echo "NOT FOUND"
-        echo "Error: make sure Coq version 8.12.2 is installed."
+        echo "Error: make sure Coq version 8.11.2 is installed."
         missingtools=true;;
 esac
 
@@ -618,7 +642,7 @@ cat > Makefile.config <<EOF
 PREFIX=$prefix
 BINDIR=$bindir
 LIBDIR=$libdir
-MANDIR=$mandir
+MANDIR=$sharedir/man
 SHAREDIR=$sharedir
 COQDEVDIR=$coqdevdir
 OCAML_NATIVE_COMP=$ocaml_native_comp
@@ -636,13 +660,12 @@ BITSIZE=$bitsize
 CASM=$casm
 CASM_OPTIONS=$casm_options
 CASMRUNTIME=$casmruntime
-CC=$cc $cc_options
+CC=$cc
 CLIGHTGEN=$clightgen
 CLINKER=$clinker
 CLINKER_OPTIONS=$clinker_options
 CPREPRO=$cprepro
 CPREPRO_OPTIONS=$cprepro_options
-ARCHIVER=$archiver
 ENDIANNESS=$endianness
 HAS_RUNTIME_LIB=$has_runtime_lib
 HAS_STANDARD_HEADERS=$has_standard_headers
@@ -712,28 +735,22 @@ ENDIANNESS=
 # SYSTEM=cygwin
 SYSTEM=
 
-# C compiler (for testing only)
-CC=cc
-
-# Assembler for assembling compiled files
-CASM=cc
-CASM_OPTIONS=-c
-
-# Assembler for assembling runtime library files
-CASMRUNTIME=$(CASM) $(CASM_OPTIONS)
-
-# Linker
-CLINKER=cc
-CLINKER_OPTIONS=-no-pie
+# C compiler for compiling runtime library files and some tests
+CC=gcc
 
 # Preprocessor for .c files
-CPREPRO=cc
-CPREPRO_OPTIONS=-std c99 -U__GNUC__ -E
+CPREPRO=gcc -U__GNUC__ -E
 
-# Archiver to build .a libraries
-ARCHIVER=ar rcs
+# Assembler for assembling .s files
+CASM=gcc -c
 
-# Math library. Set to empty under macOS
+# Assembler for assembling runtime library files
+CASMRUNTIME=gcc -c
+
+# Linker
+CLINKER=gcc
+
+# Math library. Set to empty under MacOS X
 LIBMATH=-lm
 
 # Turn on/off the installation and use of the runtime support library
@@ -749,8 +766,8 @@ ASM_SUPPORTS_CFI=false
 # Turn on/off compilation of clightgen
 CLIGHTGEN=false
 
-# Whether the other tools support responsefiles in GNU syntax or Diab syntax
-RESPONSEFILE=gnu  # diab
+# Whether the other tools support responsefiles in gnu syntax
+RESPONSEFILE="none"
 
 # Whether to use the local copies of Flocq and MenhirLib
 LIBRARY_FLOCQ=local      # external
@@ -785,7 +802,7 @@ B cparser
 B extraction
 EOF
 
-$make CoqProject
+make CoqProject
 
 #
 # Clean up target-dependent files to force their recompilation
@@ -803,9 +820,9 @@ Please finish the configuration by editing file ./Makefile.config.
 EOF
 else
 
-expandprefix() {
-  echo "$1" | sed -e "s|\\\$(PREFIX)|$prefix|"
-}
+bindirexp=`echo "$bindir" | sed -e "s|\\\$(PREFIX)|$prefix|"`
+libdirexp=`echo "$libdir" | sed -e "s|\\\$(PREFIX)|$prefix|"`
+coqdevdirexp=`echo "$coqdevdir" | sed -e "s|\\\$(PREFIX)|$prefix|"`
 
 cat <<EOF
 
@@ -815,29 +832,28 @@ CompCert configuration:
     Application binary interface.. $abi
     Endianness.................... $endianness
     OS and development env........ $system
-    C compiler.................... $cc $cc_options
-    C preprocessor................ $cprepro $cprepro_options
-    Assembler..................... $casm $casm_options
+    C compiler.................... $cc
+    C preprocessor................ $cprepro
+    Assembler..................... $casm
     Assembler supports CFI........ $asm_supports_cfi
     Assembler for runtime lib..... $casmruntime
-    Linker........................ $clinker $clinker_options
-    Archiver...................... $archiver
+    Linker........................ $clinker
+    Linker needs '-no-pie'........ $clinker_needs_no_pie
     Math library.................. $libmath
     Build command to use.......... $make
     Menhir API library............ $menhir_dir
     The Flocq library............. $library_Flocq
     The MenhirLib library......... $library_MenhirLib
-    Binaries installed in......... $(expandprefix $bindir)
+    Binaries installed in......... $bindirexp
     Runtime library provided...... $has_runtime_lib
-    Library files installed in.... $(expandprefix $libdir)
-    Man pages installed in........ $(expandprefix $mandir)
+    Library files installed in.... $libdirexp
     Standard headers provided..... $has_standard_headers
-    Standard headers installed in. $(expandprefix $libdir)/include
+    Standard headers installed in. $libdirexp/include
 EOF
 
 if $install_coqdev; then
 cat <<EOF
-    Coq development installed in.. $(expandprefix $coqdevdir)
+    Coq development installed in.. $coqdevdirexp
 EOF
 else
 cat <<EOF

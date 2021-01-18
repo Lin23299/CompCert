@@ -95,8 +95,7 @@ let () =
     (* We can ignore the __extension__ GCC keyword. *)
     ignored_keywords := SSet.add "__extension__" !ignored_keywords
 
-let init_ctx = SSet.of_list (List.map fst CBuiltins.builtins.C.builtin_typedefs)
-
+let init_ctx = SSet.singleton "__builtin_va_list"
 let types_context : SSet.t ref = ref init_ctx
 
 let _ =

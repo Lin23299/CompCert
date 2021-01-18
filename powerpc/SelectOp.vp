@@ -468,7 +468,7 @@ Definition intoffloat (e: expr) := Eop Ointoffloat (e ::: Enil).
 
 Definition intuoffloat (e: expr) :=
   if Archi.ppc64 then
-    Eop Olowlong (Eop Olongoffloat (e ::: Enil) ::: Enil)
+    Eop Ointuoffloat (e ::: Enil)
   else
     Elet e
     (Elet (Eop (Ofloatconst (Float.of_intu Float.ox8000_0000)) Enil)
@@ -482,8 +482,7 @@ Nondetfunction floatofintu (e: expr) :=
       Eop (Ofloatconst (Float.of_intu n)) Enil
   | _ =>
       if Archi.ppc64 then
-        Eop Ofloatoflong (Eop Ocast32unsigned (e ::: Enil) ::: Enil)
-      else
+        Eop Ofloatofintu (e ::: Enil)  else
         subf (Eop Ofloatofwords (Eop (Ointconst Float.ox4330_0000) Enil ::: e ::: Enil))
              (Eop (Ofloatconst (Float.from_words Float.ox4330_0000 Int.zero)) Enil)
   end.
@@ -494,8 +493,7 @@ Nondetfunction floatofint (e: expr) :=
       Eop (Ofloatconst (Float.of_int n)) Enil
   | _ =>
       if Archi.ppc64 then
-        Eop Ofloatoflong (Eop Ocast32signed (e ::: Enil) ::: Enil)
-      else
+        Eop Ofloatofint (e ::: Enil) else
         subf (Eop Ofloatofwords (Eop (Ointconst Float.ox4330_0000) Enil
                                  ::: addimm Float.ox8000_0000 e ::: Enil))
              (Eop (Ofloatconst (Float.from_words Float.ox4330_0000 Float.ox8000_0000)) Enil)

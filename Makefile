@@ -41,7 +41,7 @@ DIRS += MenhirLib
 COQINCLUDES += -R MenhirLib MenhirLib
 endif
 
-COQCOPTS ?= -w -undeclared-scope
+COQCOPTS ?= -w -undeclared-scope -w -omega-is-deprecated
 COQC="$(COQBIN)coqc" -q $(COQINCLUDES) $(COQCOPTS)
 COQDEP="$(COQBIN)coqdep" $(COQINCLUDES)
 COQDOC="$(COQBIN)coqdoc"
@@ -57,7 +57,6 @@ GPATH=$(DIRS)
 
 ifeq ($(LIBRARY_FLOCQ),local)
 FLOCQ=\
-  SpecFloatCompat.v \
   Raux.v Zaux.v Defs.v Digits.v Float_prop.v FIX.v FLT.v FLX.v FTZ.v \
   Generic_fmt.v Round_pred.v Round_NE.v Ulp.v Core.v \
   Bracket.v Div.v Operations.v Round.v Sqrt.v \

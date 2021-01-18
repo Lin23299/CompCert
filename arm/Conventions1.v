@@ -309,7 +309,7 @@ Remark loc_arguments_hf_charact:
   In p (loc_arguments_hf tyl ir fr ofs) -> forall_rpair (loc_argument_charact ofs) p.
 Proof.
   assert (X: forall ofs1 ofs2 l, loc_argument_charact ofs2 l -> ofs1 <= ofs2 -> loc_argument_charact ofs1 l).
-  { destruct l; simpl; intros; auto. destruct sl; auto. intuition lia. }
+  { destruct l; simpl; intros; auto. destruct sl; auto. intuition omega. }
   assert (Y: forall ofs1 ofs2 p, forall_rpair (loc_argument_charact ofs2) p -> ofs1 <= ofs2 -> forall_rpair (loc_argument_charact ofs1) p).
   { destruct p; simpl; intuition eauto. }
   induction tyl; simpl loc_arguments_hf; intros.
@@ -319,40 +319,40 @@ Proof.
   destruct (zlt ir 4); destruct H.
   subst. apply ireg_param_caller_save.
   eapply IHtyl; eauto.
-  subst. split; [lia | auto].
-  eapply Y; eauto. lia.
+  subst. split; [omega | auto].
+  eapply Y; eauto. omega.
 - (* float *)
   destruct (zlt fr 8); destruct H.
   subst. apply freg_param_caller_save.
   eapply IHtyl; eauto.
-  subst. split. apply Z.le_ge. apply align_le. lia. auto.
-  eapply Y; eauto. apply Z.le_trans with (align ofs 2). apply align_le; lia. lia.
+  subst. split. apply Z.le_ge. apply align_le. omega. auto.
+  eapply Y; eauto. apply Z.le_trans with (align ofs 2). apply align_le; omega. omega.
 - (* long *)
   set (ir' := align ir 2) in *.
-  assert (ofs <= align ofs 2) by (apply align_le; lia).
+  assert (ofs <= align ofs 2) by (apply align_le; omega).
   destruct (zlt ir' 4).
   destruct H. subst p. split; apply ireg_param_caller_save.
   eapply IHtyl; eauto.
-  destruct H. subst p. split; destruct Archi.big_endian; (split; [ lia | auto ]).
-  eapply Y. eapply IHtyl; eauto. lia.
+  destruct H. subst p. split; destruct Archi.big_endian; (split; [ omega | auto ]).
+  eapply Y. eapply IHtyl; eauto. omega.
 - (* single *)
   destruct (zlt fr 8); destruct H.
   subst. apply freg_param_caller_save.
   eapply IHtyl; eauto.
-  subst. split; [lia|auto].
-  eapply Y; eauto. lia.
+  subst. split; [omega|auto].
+  eapply Y; eauto. omega.
 - (* any32 *)
   destruct (zlt ir 4); destruct H.
   subst. apply ireg_param_caller_save.
   eapply IHtyl; eauto.
-  subst. split; [lia | auto].
-  eapply Y; eauto. lia.
+  subst. split; [omega | auto].
+  eapply Y; eauto. omega.
 - (* any64 *)
   destruct (zlt fr 8); destruct H.
   subst. apply freg_param_caller_save.
   eapply IHtyl; eauto.
-  subst. split. apply Z.le_ge. apply align_le. lia. auto.
-  eapply Y; eauto. apply Z.le_trans with (align ofs 2). apply align_le; lia. lia.
+  subst. split. apply Z.le_ge. apply align_le. omega. auto.
+  eapply Y; eauto. apply Z.le_trans with (align ofs 2). apply align_le; omega. omega.
 Qed.
 
 Remark loc_arguments_sf_charact:
@@ -360,7 +360,7 @@ Remark loc_arguments_sf_charact:
   In p (loc_arguments_sf tyl ofs) -> forall_rpair (loc_argument_charact (Z.max 0 ofs)) p.
 Proof.
   assert (X: forall ofs1 ofs2 l, loc_argument_charact (Z.max 0 ofs2) l -> ofs1 <= ofs2 -> loc_argument_charact (Z.max 0 ofs1) l).
-  { destruct l; simpl; intros; auto. destruct sl; auto. intuition extlia. }
+  { destruct l; simpl; intros; auto. destruct sl; auto. intuition xomega. }
   assert (Y: forall ofs1 ofs2 p, forall_rpair (loc_argument_charact (Z.max 0 ofs2)) p -> ofs1 <= ofs2 -> forall_rpair (loc_argument_charact (Z.max 0 ofs1)) p).
   { destruct p; simpl; intuition eauto. }
   induction tyl; simpl loc_arguments_sf; intros.
@@ -370,44 +370,44 @@ Proof.
   destruct H.
   destruct (zlt ofs 0); subst p.
   apply ireg_param_caller_save.
-  split; [extlia|auto].
-  eapply Y; eauto. lia.
+  split; [xomega|auto].
+  eapply Y; eauto. omega.
 - (* float *)
   set (ofs' := align ofs 2) in *.
-  assert (ofs <= ofs') by (apply align_le; lia).
+  assert (ofs <= ofs') by (apply align_le; omega).
   destruct H.
   destruct (zlt ofs' 0); subst p.
   apply freg_param_caller_save.
-  split; [extlia|auto].
-  eapply Y. eapply IHtyl; eauto. lia.
+  split; [xomega|auto].
+  eapply Y. eapply IHtyl; eauto. omega.
 - (* long *)
   set (ofs' := align ofs 2) in *.
-  assert (ofs <= ofs') by (apply align_le; lia).
+  assert (ofs <= ofs') by (apply align_le; omega).
   destruct H.
   destruct (zlt ofs' 0); subst p.
   split; apply ireg_param_caller_save.
-  split; destruct Archi.big_endian; (split; [extlia|auto]).
-  eapply Y. eapply IHtyl; eauto. lia.
+  split; destruct Archi.big_endian; (split; [xomega|auto]).
+  eapply Y. eapply IHtyl; eauto. omega.
 - (* single *)
   destruct H.
   destruct (zlt ofs 0); subst p.
   apply freg_param_caller_save.
-  split; [extlia|auto].
-  eapply Y; eauto. lia.
+  split; [xomega|auto].
+  eapply Y; eauto. omega.
 - (* any32 *)
   destruct H.
   destruct (zlt ofs 0); subst p.
   apply ireg_param_caller_save.
-  split; [extlia|auto].
-  eapply Y; eauto. lia.
+  split; [xomega|auto].
+  eapply Y; eauto. omega.
 - (* any64 *)
   set (ofs' := align ofs 2) in *.
-  assert (ofs <= ofs') by (apply align_le; lia).
+  assert (ofs <= ofs') by (apply align_le; omega).
   destruct H.
   destruct (zlt ofs' 0); subst p.
   apply freg_param_caller_save.
-  split; [extlia|auto].
-  eapply Y. eapply IHtyl; eauto. lia.
+  split; [xomega|auto].
+  eapply Y. eapply IHtyl; eauto. omega.
 Qed.
 
 Lemma loc_arguments_acceptable:
@@ -436,9 +436,8 @@ Proof.
   destruct Archi.abi; reflexivity.
 Qed.
 
-(** ** Normalization of function results and parameters *)
+(** ** Normalization of function results *)
 
 (** No normalization needed. *)
 
 Definition return_value_needs_normalization (t: rettype) := false.
-Definition parameter_needs_normalization (t: rettype) := false.

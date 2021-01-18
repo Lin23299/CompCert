@@ -19,7 +19,6 @@ COPYING file for more details.
 
 (** * Helper functions and theorems for computing the rounded square root of a floating-point number. *)
 
-From Coq Require Import Lia.
 Require Import Raux Defs Digits Generic_fmt Float_prop Bracket.
 
 Set Implicit Arguments.
@@ -87,7 +86,7 @@ assert (sqrt (F2R (Float beta m1 e1)) = sqrt (IZR m') * bpow e)%R as Hf.
 { rewrite <- (sqrt_Rsqr (bpow e)) by apply bpow_ge_0.
   rewrite <- sqrt_mult.
   unfold Rsqr, m'.
-  rewrite mult_IZR, IZR_Zpower by lia.
+  rewrite mult_IZR, IZR_Zpower by omega.
   rewrite Rmult_assoc, <- 2!bpow_plus.
   now replace (_ + _)%Z with e1 by ring.
   now apply IZR_le.
@@ -107,7 +106,7 @@ fold (Rsqr (IZR q)).
 rewrite sqrt_Rsqr.
 now constructor.
 apply IZR_le.
-clear -Hr ; lia.
+clear -Hr ; omega.
 (* .. r <> 0 *)
 constructor.
 split.
@@ -118,14 +117,14 @@ fold (Rsqr (IZR q)).
 rewrite sqrt_Rsqr.
 apply Rle_refl.
 apply IZR_le.
-clear -Hr ; lia.
+clear -Hr ; omega.
 apply sqrt_lt_1.
 rewrite mult_IZR.
 apply Rle_0_sqr.
 rewrite <- Hq.
 now apply IZR_le.
 apply IZR_lt.
-lia.
+omega.
 apply Rlt_le_trans with (sqrt (IZR ((q + 1) * (q + 1)))).
 apply sqrt_lt_1.
 rewrite <- Hq.
@@ -134,13 +133,13 @@ rewrite mult_IZR.
 apply Rle_0_sqr.
 apply IZR_lt.
 ring_simplify.
-lia.
+omega.
 rewrite mult_IZR.
 fold (Rsqr (IZR (q + 1))).
 rewrite sqrt_Rsqr.
 apply Rle_refl.
 apply IZR_le.
-clear -Hr ; lia.
+clear -Hr ; omega.
 (* ... location *)
 rewrite Rcompare_half_r.
 generalize (Rcompare_sqr (2 * sqrt (IZR (q * q + r))) (IZR q + IZR (q + 1))).
@@ -155,14 +154,14 @@ replace ((q + (q + 1)) * (q + (q + 1)))%Z with (4 * (q * q) + 4 * q + 1)%Z by ri
 generalize (Zle_cases r q).
 case (Zle_bool r q) ; intros Hr''.
 change (4 * (q * q + r) < 4 * (q * q) + 4 * q + 1)%Z.
-lia.
+omega.
 change (4 * (q * q + r) > 4 * (q * q) + 4 * q + 1)%Z.
-lia.
+omega.
 rewrite <- Hq.
 now apply IZR_le.
 rewrite <- plus_IZR.
 apply IZR_le.
-clear -Hr ; lia.
+clear -Hr ; omega.
 apply Rmult_le_pos.
 now apply IZR_le.
 apply sqrt_ge_0.
@@ -189,7 +188,7 @@ set (e := Z.min _ _).
 assert (2 * e <= e1)%Z as He.
 { assert (e <= Z.div2 e1)%Z by apply Z.le_min_r.
   rewrite (Zdiv2_odd_eqn e1).
-  destruct Z.odd ; lia. }
+  destruct Z.odd ; omega. }
 generalize (Fsqrt_core_correct m1 e1 e Hm1 He).
 destruct Fsqrt_core as [m l].
 apply conj.

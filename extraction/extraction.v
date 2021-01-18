@@ -55,6 +55,32 @@ Extraction Inline DecidableClass.Decidable_witness DecidableClass.decide
 (* Wfsimpl *)
 Extraction Inline Wfsimpl.Fix Wfsimpl.Fixm.
 
+(* Values - realization of block and sup*)
+Extract Constant Values.block => "positive".
+
+Extract Constant Values.eq_block => "Coqlib.peq".
+
+(*
+Extract Constant Values.fresh_block => "( let open BinPos in
+                                           fun s -> match s with
+                                           |[] -> Coq_xH
+                                           |h::t -> Pos.succ h)".
+*)
+
+Extract Constant Values.fresh_block =>"(let open BinPos in
+                                        fun s ->
+                                        let com_p =
+                                            (fun p1 p2 -> match Pos.compare p1 p2 with
+                                            |Gt -> -1
+                                            |r -> 0
+                                            |Lt -> 1) in
+                                        let ss = List.sort com_p s in
+                                        match ss with
+                                        | [] -> Coq_xH
+                                        | h::t -> Pos.succ h
+                                        )".
+
+
 (* Memory - work around an extraction bug. *)
 Extraction NoInline Memory.Mem.valid_pointer.
 
@@ -123,6 +149,11 @@ Extract Constant Compiler.print_LTL => "PrintLTL.print_if".
 Extract Constant Compiler.print_Mach => "PrintMach.print_if".
 Extract Constant Compiler.print => "fun (f: 'a -> unit) (x: 'a) -> f x; x".
 Extract Constant Compiler.time  => "Timing.time_coq".
+
+(* Initializers *)
+
+Extract Constant Initializers.ident_to_block => "(fun x -> x)".
+Extract Constant Initializers.block_to_ident => "(fun x -> x)".
 
 (*Extraction Inline Compiler.apply_total Compiler.apply_partial.*)
 

@@ -18,8 +18,6 @@ COPYING file for more details.
 *)
 
 (** * Basic properties of floating-point formats: lemmas about mantissa, exponent... *)
-
-From Coq Require Import Lia.
 Require Import Raux Defs Digits.
 
 Section Float_prop.
@@ -362,7 +360,7 @@ unfold F2R. simpl.
 apply Rmult_le_compat_r.
 apply bpow_ge_0.
 apply IZR_le.
-lia.
+omega.
 Qed.
 
 Theorem F2R_lt_bpow :
@@ -381,7 +379,7 @@ rewrite <-IZR_Zpower. 2: now apply Zle_left.
 now apply IZR_lt.
 elim Zlt_not_le with (1 := Hm).
 simpl.
-cut (e' - e < 0)%Z. 2: lia.
+cut (e' - e < 0)%Z. 2: omega.
 clear.
 case (e' - e)%Z ; try easy.
 intros p _.
@@ -415,7 +413,7 @@ now elim (Zle_not_lt _ _ (Zabs_pos m)).
 (* . *)
 replace (e - e' + p)%Z with (e - (e' - p))%Z by ring.
 apply F2R_change_exp.
-cut (e' - 1 < e + p)%Z. lia.
+cut (e' - 1 < e + p)%Z. omega.
 apply (lt_bpow beta).
 apply Rle_lt_trans with (1 := Hf).
 rewrite <- F2R_Zabs, Zplus_comm, bpow_plus.
@@ -474,10 +472,10 @@ assert (Hd := Zdigits_correct beta n).
 assert (Hd' := Zdigits_gt_0 beta n).
 apply Zle_antisym ; apply (bpow_lt_bpow beta).
 apply Rle_lt_trans with (2 := proj2 He).
-rewrite <- IZR_Zpower by lia.
+rewrite <- IZR_Zpower by omega.
 now apply IZR_le.
 apply Rle_lt_trans with (1 := proj1 He).
-rewrite <- IZR_Zpower by lia.
+rewrite <- IZR_Zpower by omega.
 now apply IZR_lt.
 Qed.
 

@@ -17,13 +17,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
-From Coq Require Import Lia ZArith Zquot.
-
+Require Import ZArith Zquot.
 Require Import Zaux.
-Require Import SpecFloatCompat.
-
-Notation digits2_pos := digits2_pos (only parsing).
-Notation Zdigits2 := Zdigits2 (only parsing).
 
 (** Number of bits (radix 2) of a positive integer.
 
@@ -46,9 +41,9 @@ intros n d. unfold d. clear.
 assert (Hp: forall m, (Zpower_nat 2 (S m) = 2 * Zpower_nat 2 m)%Z) by easy.
 induction n ; simpl digits2_Pnat.
 rewrite Zpos_xI, 2!Hp.
-lia.
+omega.
 rewrite (Zpos_xO n), 2!Hp.
-lia.
+omega.
 now split.
 Qed.
 
@@ -190,13 +185,13 @@ apply Zgt_not_eq.
 now apply Zpower_gt_0.
 now apply Zle_minus_le_0.
 destruct (Zle_or_lt 0 k) as [H0|H0].
-rewrite (Zdigit_lt n) by lia.
+rewrite (Zdigit_lt n) by omega.
 unfold Zdigit.
 replace k' with (k' - k + k)%Z by ring.
 rewrite Zpower_plus with (2 := H0).
 rewrite Zmult_assoc, Z_quot_mult.
 replace (k' - k)%Z with (k' - k - 1 + 1)%Z by ring.
-rewrite Zpower_exp by lia.
+rewrite Zpower_exp by omega.
 rewrite Zmult_assoc.
 change (Zpower beta 1) with (beta * 1)%Z.
 rewrite Zmult_1_r.
@@ -208,7 +203,7 @@ now apply Zlt_le_weak.
 rewrite Zdigit_lt with (1 := H0).
 apply sym_eq.
 apply Zdigit_lt.
-lia.
+omega.
 Qed.
 
 Theorem Zdigit_div_pow :
@@ -232,7 +227,7 @@ unfold Zdigit.
 rewrite <- 2!ZOdiv_mod_mult.
 apply (f_equal (fun x => Z.quot x (beta ^ k))).
 replace k' with (k + 1 + (k' - (k + 1)))%Z by ring.
-rewrite Zpower_exp by lia.
+rewrite Zpower_exp by omega.
 rewrite Zmult_comm.
 rewrite Zpower_plus by easy.
 change (Zpower beta 1) with (beta * 1)%Z.
@@ -454,7 +449,7 @@ unfold Zscale.
 case Zle_bool_spec ; intros Hk.
 now apply Zdigit_mul_pow.
 apply Zdigit_div_pow with (1 := Hk').
-lia.
+omega.
 Qed.
 
 Theorem Zscale_0 :
@@ -497,7 +492,7 @@ now rewrite Zpower_plus.
 now apply Zplus_le_0_compat.
 case Zle_bool_spec ; intros Hk''.
 pattern k at 1 ; replace k with (k + k' + -k')%Z by ring.
-assert (0 <= -k')%Z by lia.
+assert (0 <= -k')%Z by omega.
 rewrite Zpower_plus by easy.
 rewrite Zmult_assoc, Z_quot_mult.
 apply refl_equal.
@@ -508,7 +503,7 @@ rewrite Zpower_plus with (2 := Hk).
 apply Zquot_mult_cancel_r.
 apply Zgt_not_eq.
 now apply Zpower_gt_0.
-lia.
+omega.
 Qed.
 
 Theorem Zscale_scale :
@@ -537,7 +532,7 @@ rewrite Zdigit_mod_pow by apply Hk.
 rewrite Zdigit_scale by apply Hk.
 unfold Zminus.
 now rewrite Z.opp_involutive, Zplus_comm.
-lia.
+omega.
 Qed.
 
 Theorem Zdigit_slice_out :
@@ -594,16 +589,16 @@ destruct (Zle_or_lt k2' k) as [Hk''|Hk''].
 now apply Zdigit_slice_out.
 rewrite Zdigit_slice by now split.
 apply Zdigit_slice_out.
-zify ; lia.
-rewrite Zdigit_slice by (zify ; lia).
+zify ; omega.
+rewrite Zdigit_slice by (zify ; omega).
 rewrite (Zdigit_slice n (k1 + k1')) by now split.
 rewrite Zdigit_slice.
 now rewrite Zplus_assoc.
-zify ; lia.
+zify ; omega.
 unfold Zslice.
 rewrite Z.min_r.
 now rewrite Zle_bool_false.
-lia.
+omega.
 Qed.
 
 Theorem Zslice_mul_pow :
@@ -629,14 +624,14 @@ case Zle_bool_spec ; intros Hk2.
 apply (f_equal (fun x => Z.rem x (beta ^ k2))).
 unfold Zscale.
 case Zle_bool_spec ; intros Hk1'.
-replace k1 with Z0 by lia.
+replace k1 with Z0 by omega.
 case Zle_bool_spec ; intros Hk'.
-replace k with Z0 by lia.
+replace k with Z0 by omega.
 simpl.
 now rewrite Z.quot_1_r.
 rewrite Z.opp_involutive.
 apply Zmult_1_r.
-rewrite Zle_bool_false by lia.
+rewrite Zle_bool_false by omega.
 rewrite 2!Z.opp_involutive, Zplus_comm.
 rewrite Zpower_plus by assumption.
 apply Zquot_Zquot.
@@ -651,7 +646,7 @@ unfold Zscale.
 case Zle_bool_spec; intros Hk.
 now apply Zslice_mul_pow.
 apply Zslice_div_pow with (2 := Hk1).
-lia.
+omega.
 Qed.
 
 Theorem Zslice_div_pow_scale :
@@ -671,7 +666,7 @@ apply Zdigit_slice_out.
 now apply Zplus_le_compat_l.
 rewrite Zdigit_slice by now split.
 destruct (Zle_or_lt 0 (k1 + k')) as [Hk1'|Hk1'].
-rewrite Zdigit_slice by lia.
+rewrite Zdigit_slice by omega.
 rewrite Zdigit_div_pow by assumption.
 apply f_equal.
 ring.
@@ -690,15 +685,15 @@ rewrite Zdigit_plus.
 rewrite Zdigit_scale with (1 := Hk).
 destruct (Zle_or_lt (l1 + l2) k) as [Hk2|Hk2].
 rewrite Zdigit_slice_out with (1 := Hk2).
-now rewrite 2!Zdigit_slice_out by lia.
+now rewrite 2!Zdigit_slice_out by omega.
 rewrite Zdigit_slice with (1 := conj Hk Hk2).
 destruct (Zle_or_lt l1 k) as [Hk1|Hk1].
 rewrite Zdigit_slice_out with (1 := Hk1).
-rewrite Zdigit_slice by lia.
+rewrite Zdigit_slice by omega.
 simpl ; apply f_equal.
 ring.
 rewrite Zdigit_slice with (1 := conj Hk Hk1).
-rewrite (Zdigit_lt _ (k - l1)) by lia.
+rewrite (Zdigit_lt _ (k - l1)) by omega.
 apply Zplus_0_r.
 rewrite Zmult_comm.
 apply Zsame_sign_trans_weak with n.
@@ -718,7 +713,7 @@ left.
 now apply Zdigit_slice_out.
 right.
 apply Zdigit_lt.
-lia.
+omega.
 Qed.
 
 Section digits_aux.
@@ -793,7 +788,7 @@ pattern (radix_val beta) at 2 5 ; replace (radix_val beta) with (Zpower beta 1) 
 rewrite <- Zpower_plus.
 rewrite Zplus_comm.
 apply IHu.
-clear -Hv ; lia.
+clear -Hv ; omega.
 split.
 now ring_simplify (1 + v - 1)%Z.
 now rewrite Zplus_assoc.
@@ -933,7 +928,7 @@ intros x y Zx Hxy.
 assert (Hx := Zdigits_correct x).
 assert (Hy := Zdigits_correct y).
 apply (Zpower_lt_Zpower beta).
-zify ; lia.
+zify ; omega.
 Qed.
 
 Theorem lt_Zdigits :
@@ -943,7 +938,7 @@ Theorem lt_Zdigits :
   (x < y)%Z.
 Proof.
 intros x y Hy.
-cut (y <= x -> Zdigits y <= Zdigits x)%Z. lia.
+cut (y <= x -> Zdigits y <= Zdigits x)%Z. omega.
 now apply Zdigits_le.
 Qed.
 
@@ -956,7 +951,7 @@ intros e x Hex.
 destruct (Zdigits_correct x) as [H1 H2].
 apply Z.le_trans with (2 := H1).
 apply Zpower_le.
-clear -Hex ; lia.
+clear -Hex ; omega.
 Qed.
 
 Theorem Zdigits_le_Zpower :
@@ -966,7 +961,7 @@ Theorem Zdigits_le_Zpower :
 Proof.
 intros e x.
 generalize (Zpower_le_Zdigits e x).
-lia.
+omega.
 Qed.
 
 Theorem Zpower_gt_Zdigits :
@@ -987,7 +982,7 @@ Theorem Zdigits_gt_Zpower :
 Proof.
 intros e x Hex.
 generalize (Zpower_gt_Zdigits e x).
-lia.
+omega.
 Qed.
 
 (** Number of digits of a product.
@@ -1015,8 +1010,8 @@ apply Zdigits_correct.
 apply Zlt_le_succ.
 rewrite <- (Z.abs_eq y) at 1 by easy.
 apply Zdigits_correct.
-clear -Hx ; lia.
-clear -Hy ; lia.
+clear -Hx ; omega.
+clear -Hy ; omega.
 change Z0 with (0 + 0 + 0)%Z.
 apply Zplus_le_compat.
 now apply Zplus_le_compat.
@@ -1036,7 +1031,7 @@ apply Zdigits_le.
 apply Zabs_pos.
 rewrite Zabs_Zmult.
 generalize (Zabs_pos x) (Zabs_pos y).
-lia.
+omega.
 apply Zdigits_mult_strong ; apply Zabs_pos.
 Qed.
 
@@ -1046,7 +1041,7 @@ Theorem Zdigits_mult_ge :
   (Zdigits x + Zdigits y - 1 <= Zdigits (x * y))%Z.
 Proof.
 intros x y Zx Zy.
-cut ((Zdigits x - 1) + (Zdigits y - 1) < Zdigits (x * y))%Z. lia.
+cut ((Zdigits x - 1) + (Zdigits y - 1) < Zdigits (x * y))%Z. omega.
 apply Zdigits_gt_Zpower.
 rewrite Zabs_Zmult.
 rewrite Zpower_exp.
@@ -1057,8 +1052,8 @@ apply Zpower_le_Zdigits.
 apply Zlt_pred.
 apply Zpower_ge_0.
 apply Zpower_ge_0.
-generalize (Zdigits_gt_0 x). lia.
-generalize (Zdigits_gt_0 y). lia.
+generalize (Zdigits_gt_0 x). omega.
+generalize (Zdigits_gt_0 y). omega.
 Qed.
 
 Theorem Zdigits_div_Zpower :
@@ -1078,7 +1073,7 @@ destruct (Zle_lt_or_eq _ _ (proj2 He)) as [He'|He'].
   replace (Zdigits m - e - 1)%Z with (Zdigits m - 1 - e)%Z by ring.
   rewrite Z.pow_sub_r.
   2: apply Zgt_not_eq, radix_gt_0.
-  2: clear -He He' ; lia.
+  2: clear -He He' ; omega.
   apply Z_div_le with (2 := H1).
   now apply Z.lt_gt, Zpower_gt_0.
   apply Zmult_lt_reg_r with (Zpower beta e).
@@ -1123,6 +1118,13 @@ rewrite <- Zpower_nat_Z.
 apply digits2_Pnat_correct.
 Qed.
 
+Fixpoint digits2_pos (n : positive) : positive :=
+  match n with
+  | xH => xH
+  | xO p => Pos.succ (digits2_pos p)
+  | xI p => Pos.succ (digits2_pos p)
+  end.
+
 Theorem Zpos_digits2_pos :
   forall m : positive,
   Zpos (digits2_pos m) = Zdigits radix2 (Zpos m).
@@ -1134,6 +1136,13 @@ apply f_equal.
 induction m ; simpl ; try easy ;
   apply f_equal, IHm.
 Qed.
+
+Definition Zdigits2 n :=
+  match n with
+  | Z0 => n
+  | Zpos p => Zpos (digits2_pos p)
+  | Zneg p => Zpos (digits2_pos p)
+  end.
 
 Lemma Zdigits2_Zdigits :
   forall n, Zdigits2 n = Zdigits radix2 n.
