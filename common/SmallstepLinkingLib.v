@@ -107,13 +107,13 @@ Section LINK'.
      C -->> C         ++            A -->> C            =      C + A -->> C
 
 
+                                                              sum of callconv?
 
-
-      1.asm                       lib.asm                        ????
+      1.asm                       lib.asm                      vertical composition'  ????
 
     A -->> A         ++            A -->> A            =      A + A -->> A
 
-                                                                 ????
+                                                                 collapse
 
               1.asm + lib.asm = out.asm                ->    A -->> A
 
