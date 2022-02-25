@@ -15,6 +15,16 @@ Structure language_interface :=
     entry: query -> val;
   }.
 
+Definition sum_li (A B:language_interface) :=
+   {|
+      query := (query A + query B);
+      reply := (reply A + reply B);
+      entry q := match q with
+                 |inl qa => (entry A) qa
+                 |inr qb => (entry B) qb
+                 end;
+    |}.
+
 Arguments entry {_}.
 
 (** ** Basic interfaces *)
