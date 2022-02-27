@@ -175,6 +175,7 @@ Program Definition cc_c (R: cklr): callconv li_c li_c :=
     match_query := cc_c_query R;
     match_reply := (<> cc_c_reply R)%klr;
   |}.
+
 Next Obligation.
   intros. eapply match_stbls_proj in H. eapply Genv.mge_public; eauto.
 Qed.
