@@ -124,7 +124,7 @@ Section LINK'.
 
 3. Diff language C + IMP + + + + + + + + + + +
 
-4. Diff 
+4. mem with explicit heap <-> mem with heap as global block
 *)
   (** * Properties *)
 
@@ -303,25 +303,25 @@ Section FSIM.
       fsim_match_states H2 se1 se2 wk idx s1 s2 ->
       match_topframes_A wk (inr idx) (callee C1 A s1) (callee A1 A' s2).
 
-  Inductive match_contframes_C wk wk': frame C1 A -> frame A1 A' -> Prop :=
+  Inductive match_contframes_C wk : frame C1 A -> frame A1 A' -> Prop :=
     | match_contframes_intro_C s1 s2:
-      match_senv cc wk' se1 se2 ->
+      match_senv cc w se1 se2 ->
       (forall r1 r2 s1', match_reply cc wk r1 r2 ->
        Smallstep.after_external (C1 se1) s1 r1 s1' ->
        exists idx s2',
          Smallstep.after_external (A1 se2) s2 r2 s2' /\
-         fsim_match_states H1 se1 se2 wk' idx s1' s2') ->
-      match_contframes_C wk wk'
+         fsim_match_states H1 se1 se2 w idx s1' s2') ->
+      match_contframes_C wk
         (caller C1 A s1)
         (caller A1 A' s2).
 
   Inductive match_states : index -> list (frame C1 A) -> list (frame A1 A') -> Prop :=
-    |match_states_caller wk idx f1 f2 :
-      match_topframes_C wk idx f1 f2 ->
+    |match_states_caller idx f1 f2 :
+      match_topframes_C w idx f1 f2 ->
       match_states idx (f1::nil) (f2::nil)
-   | match_states_callee wk wk' idx f1 f2 k1 k2:
+   | match_states_callee wk idx f1 f2 k1 k2:
       match_topframes_A wk idx f1 f2 ->
-      match_contframes_C wk wk' k1 k2 ->
+      match_contframes_C wk k1 k2 ->
       match_states idx (f1::k1::nil) (f2::k2::nil).
 
   Lemma step_simulation:
@@ -357,8 +357,7 @@ Section FSIM.
       eexists (inr idx'), _. split.
       + left. apply plus_one. eapply step_push; eauto 1.
         erewrite fsim_match_valid_query; eauto.
-      + (econstructor; eauto). (econstructor; eauto).
-        instantiate (1:= wk). (econstructor; eauto).
+      + repeat (econstructor; eauto).
     - inv H7; subst_dep.
     - inv H8; subst_dep.
       pose proof (fsim_lts H2 _ _ H4 H5).
@@ -390,9 +389,8 @@ Section FSIM.
     inv Hs. inv H3.
     pose proof (fsim_lts H1 _ _ H0 H4).
     edestruct @fsim_match_final_states as (r2 & Hr2 & Hr); eauto.
-    assert (w = wk). admit. subst.
     exists r2. split; eauto. constructor. eauto.
-  Admitted.
+  Qed.
 
   Lemma external_simulation:
     forall idx s1 s2 qx1, match_states idx s1 s2 -> at_external C1 A se1 s1 qx1 ->
@@ -400,19 +398,33 @@ Section FSIM.
     forall rx1 rx2 s1', match_reply (sum_cc cc cc_id) wx rx1 rx2 -> after_external C1 A se1 s1 rx1 s1' ->
     exists idx' s2', after_external A1 A' se2 s2 rx2 s2' /\ match_states idx' s1' s2'.
   Proof.
-    clear - HL Hse1.
-    intros idx s1 s2 q1 Hs Hq1. destruct Hq1 as [i s1 qx1 k1 Hqx1 Hvld].
-    inv Hs. inv H2. subst_dep. clear idx0.
-    pose proof (fsim_lts (HL i) _ _ H1 H5) as Hi.
-    edestruct @fsim_match_external as (wx & qx2 & Hqx2 & Hqx & Hsex & H); eauto.
-    exists wx, qx2. intuition idtac.
-    + constructor. eauto.
-      intros j. pose proof (fsim_lts (HL j) _ _ Hsex (Hse1 j)).
-      erewrite fsim_match_valid_query; eauto.
-    + inv H2; subst_dep.
-      edestruct H as (idx' & s2' & Hs2' & Hs'); eauto.
-      eexists (existT _ i idx'), _.
-      split; repeat (econstructor; eauto).
+    intros idx s1 s2 q1 Hs Hq1.
+    inversion Hq1; subst_dep.
+    - (*C external*)
+      inv Hs. inv H7.
+      pose proof (fsim_lts H1 _ _ H4 H5) as Hi.
+      edestruct @fsim_match_external as (wx & qx2 & Hqx2 & Hqx & Hsex & H'); eauto.
+      exists (inl wx), (inl qx2). intuition idtac.
+      + constructor. eauto.
+        pose proof (fsim_lts H2 _ _ Hsex Hse2).
+        erewrite fsim_match_valid_query; eauto.
+      + inv H6; subst_dep.
+        destruct rx2; simpl in H3.
+        edestruct H' as (idx' & s2' & Hs2' & Hs'); eauto.
+        eexists (inl idx'), _.
+        split; repeat (econstructor; eauto). inversion H3.
+      + inv H8. inv H6.
+    - (*A external*)
+      inv Hs. inv H6. inv H7. inv H5.
+      pose proof (fsim_lts H2 _ _ H6 H7) as Hi.
+            edestruct @fsim_match_external as (wx & qx2 & Hqx2 & Hqx & Hsex & H'); eauto.
+      exists (inr wx), (inr qx2). intuition idtac.
+      + constructor. eauto.
+      + inv H5; subst_dep.
+        destruct rx2; simpl in H4. inversion H4. subst.
+        edestruct H' as (idx' & s2' & Hs2' & Hs'); eauto. constructor.
+        eexists (inr idx'), _.
+        split; repeat (econstructor; eauto).
   Qed.
 
   Lemma semantics_simulation sk1 sk2:
@@ -420,7 +432,16 @@ Section FSIM.
       (semantics_link_lib C1 A sk1 se1)
       (semantics_link_lib A1 A' sk2 se2)
       index order match_states.
-    Admitted.
+  Proof.
+    split; cbn.
+    - intros. unfold valid_query. f_equal.
+      + eapply (fsim_lts H1); eauto.
+    - eauto using initial_states_simulation.
+    - eauto using final_states_simulation.
+    - exact external_simulation.
+    - eauto using step_simulation.
+  Qed.
+
 End FSIM.
 
 
@@ -444,13 +465,18 @@ Proof.
   destruct (link (skel C1) (skel A)) as [sk1|] eqn:Hsk1; try discriminate. inv H1.
   destruct (link (skel A1) (skel A')) as [sk2|] eqn:Hsk2; try discriminate. inv H2.
   constructor.
-(*  eapply Forward_simulation with (order cc L1 L2 HL) (match_states cc L1 L2 HL).
+  eapply Forward_simulation with (order cc C1 A A1 A' Ha Hb) (match_states cc C1 A A1 A' Ha Hb).
   - destruct Ha, Hb. cbn. congruence.
   - intros se1 se2 w Hse Hse1.
-    eapply semantics_simulation; eauto.
     pose proof (link_linkorder _ _ _ Hsk1) as [Hsk1a Hsk1b].
-    intros [|]; cbn; eapply Genv.valid_for_linkorder; eauto.
-  - clear - HL. intros [i x].
-    induction (fsim_order_wf (HL i) x) as [x Hx IHx].
-    constructor. intros z Hxz. inv Hxz; subst_dep. eauto. *)
-  Admitted.
+    eapply semantics_simulation; eauto.
+    eapply Genv.valid_for_linkorder; eauto.
+    eapply Genv.valid_for_linkorder; eauto.
+  - intros [idx | idx].
+    +
+    induction (fsim_order_wf Ha idx) as [Hx IHx].
+    constructor. intros z Hxz. inv Hxz; subst_dep. eauto.
+    +
+    induction (fsim_order_wf Hb idx) as [Hx IHx].
+    constructor. intros z Hxz. inv Hxz; subst_dep. eauto.
+Qed.
