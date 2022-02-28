@@ -281,7 +281,7 @@ Section FSIM.
   Context (H1 : fsim_components cc cc C1 A1) (H2: fsim_components cc_id cc A A').
   Context (se1 se2: Genv.symtbl) (w: ccworld cc).
   Context (Hse: match_senv cc w se1 se2).
-  Context (Hse1 : Genv.valid_for (skel C1) se1) (Hse2 : Genv.valid_for (skel C1) se2).
+  Context (Hse1 : Genv.valid_for (skel C1) se1) (Hse2 : Genv.valid_for (skel A) se1).
 
   Definition index : Type := (fsim_index H1) + (fsim_index H2).
 
@@ -289,38 +289,131 @@ Section FSIM.
     |order_l x y : fsim_order H1 x y -> order (inl x) (inl y)
     |order_r x y : fsim_order H2 x y -> order (inr x) (inr y).
 
-  Inductive match_topframes wk : index -> frame C1 A -> frame A1 A' -> Prop :=
-    |match_topframes_C s1 s2 idx:
+  Inductive match_topframes_C wk : index -> frame C1 A -> frame A1 A' -> Prop :=
+    |match_topframes_intro_C s1 s2 idx:
       match_senv cc wk se1 se2 -> (*????????*)
       Genv.valid_for (skel C1) se1 ->
       fsim_match_states H1 se1 se2 wk idx s1 s2 ->
-      match_topframes wk (inl idx) (caller C1 A s1) (caller A1 A' s2)
-    |match_topframes_A s1 s2 idx:
+      match_topframes_C wk (inl idx) (caller C1 A s1) (caller A1 A' s2).
+
+  Inductive match_topframes_A wk : index -> frame C1 A -> frame A1 A' -> Prop :=
+    |match_topframes_intro_A s1 s2 idx:
       match_senv cc wk se1 se2 -> (*?????*)
       Genv.valid_for (skel A) se1 ->
       fsim_match_states H2 se1 se2 wk idx s1 s2 ->
-      match_topframes wk (inr idx) (callee C1 A s1) (callee A1 A' s2).
+      match_topframes_A wk (inr idx) (callee C1 A s1) (callee A1 A' s2).
 
-  Inductive match_contframes wk wk': frame C1 A -> frame A1 A' -> Prop :=
-    | match_contframes_C s1 s2:
+  Inductive match_contframes_C wk wk': frame C1 A -> frame A1 A' -> Prop :=
+    | match_contframes_intro_C s1 s2:
       match_senv cc wk' se1 se2 ->
       (forall r1 r2 s1', match_reply cc wk r1 r2 ->
        Smallstep.after_external (C1 se1) s1 r1 s1' ->
        exists idx s2',
          Smallstep.after_external (A1 se2) s2 r2 s2' /\
          fsim_match_states H1 se1 se2 wk' idx s1' s2') ->
-      match_contframes wk wk'
+      match_contframes_C wk wk'
         (caller C1 A s1)
         (caller A1 A' s2).
 
   Inductive match_states : index -> list (frame C1 A) -> list (frame A1 A') -> Prop :=
     |match_states_caller wk idx f1 f2 :
-      match_topframes wk idx f1 f2 ->
-      match_states idx (f1::nil) (f2::nil).
+      match_topframes_C wk idx f1 f2 ->
+      match_states idx (f1::nil) (f2::nil)
    | match_states_callee wk wk' idx f1 f2 k1 k2:
-     
+      match_topframes_A wk idx f1 f2 ->
+      match_contframes_C wk wk' k1 k2 ->
+      match_states idx (f1::k1::nil) (f2::k2::nil).
 
-  Variable match_states : index -> list (frame C1 A) -> list (frame A1 A') -> Prop.
+  Lemma step_simulation:
+    forall idx s1 s2 t s1', match_states idx s1 s2 -> step C1 A se1 s1 t s1' ->
+    exists idx' s2',
+      (plus (fun _ => step A1 A' se2) tt s2 t s2' \/
+       star (fun _ => step A1 A' se2) tt s2 t s2' /\ order idx' idx) /\
+      match_states idx' s1' s2'.
+  Proof.
+    intros idx s1 s2 t s1' Hs Hs1'.
+    destruct Hs1'; inv Hs.
+    - (* internal step *)
+      inv H6; subst_dep.
+      edestruct @fsim_simulation as (idx' & s2' & Hs2' & Hs'); eauto using fsim_lts.
+      eexists (inl idx'),  _. split.
+      * destruct Hs2'; [left | right]; intuition eauto using star_internal_C, plus_internal_C.
+        constructor. auto.
+      * econstructor; eauto. econstructor; eauto.
+    - (* cross-component call *)
+      inv H5; subst_dep.
+    - (* cross-component return *)
+      inv H6; subst_dep.
+    - inv H5; subst_dep.
+      edestruct @fsim_simulation as (idx' & s2' & Hs2' & Hs'); eauto using fsim_lts.
+      eexists (inr idx'),  _. split.
+      * destruct Hs2'; [left | right]; intuition eauto using star_internal_A, plus_internal_A.
+        constructor. auto.
+      * econstructor; eauto. econstructor; eauto.
+    - inv H8; subst_dep.
+      edestruct @fsim_match_external as (wx & qx2 & Hqx2 & Hqx & Hsex & Hrx); eauto using fsim_lts.
+      pose proof (fsim_lts H2 _ _ Hsex Hse2).
+      edestruct @fsim_match_initial_states as (idx' & s2' & Hs2' & Hs'); eauto.
+      eexists (inr idx'), _. split.
+      + left. apply plus_one. eapply step_push; eauto 1.
+        erewrite fsim_match_valid_query; eauto.
+      + (econstructor; eauto). (econstructor; eauto).
+        instantiate (1:= wk). (econstructor; eauto).
+    - inv H7; subst_dep.
+    - inv H8; subst_dep.
+      pose proof (fsim_lts H2 _ _ H4 H5).
+      edestruct @fsim_match_final_states as (r2 & Hr2 & Hr); eauto.
+      inv H9; subst_dep. edestruct H10 as (idx' & s2' & Hs2'& Hs'); eauto.
+      eexists (inl idx'), _. split.
+      + left. apply plus_one. eapply step_pop; eauto.
+      + repeat (econstructor; eauto).
+  Qed.
+
+  Lemma initial_states_simulation:
+    forall q1 q2 s1, match_query cc w q1 q2 -> initial_state C1 A se1 q1 s1 ->
+    exists idx s2, initial_state A1 A' se2 q2 s2 /\ match_states idx s1 s2.
+  Proof.
+    intros q1 q2 _ Hq  [s1 Hq1 Hs1].
+    pose proof (fsim_lts H1 _ _ Hse Hse1).
+    edestruct @fsim_match_initial_states as (idx & s2 & Hs2 & Hs); eauto.
+    exists (inl idx), (caller A1 A' s2 :: nil).
+    split; econstructor; eauto.
+    + erewrite fsim_match_valid_query; eauto.
+    + econstructor; eauto.
+  Qed.
+
+  Lemma final_states_simulation:
+    forall idx s1 s2 r1, match_states idx s1 s2 -> final_state C1 A se1 s1 r1 ->
+    exists r2, final_state A1 A' se2 s2 r2 /\ match_reply cc w r1 r2.
+  Proof.
+    clear. intros idx s1 s2 r1 Hs Hr1. destruct Hr1 as [s1 r1 Hr1].
+    inv Hs. inv H3.
+    pose proof (fsim_lts H1 _ _ H0 H4).
+    edestruct @fsim_match_final_states as (r2 & Hr2 & Hr); eauto.
+    assert (w = wk). admit. subst.
+    exists r2. split; eauto. constructor. eauto.
+  Admitted.
+
+  Lemma external_simulation:
+    forall idx s1 s2 qx1, match_states idx s1 s2 -> at_external C1 A se1 s1 qx1 ->
+    exists wx qx2, at_external A1 A' se2 s2 qx2 /\ match_query (sum_cc cc cc_id) wx qx1 qx2 /\ match_senv (sum_cc cc cc_id) wx se1 se2 /\
+    forall rx1 rx2 s1', match_reply (sum_cc cc cc_id) wx rx1 rx2 -> after_external C1 A se1 s1 rx1 s1' ->
+    exists idx' s2', after_external A1 A' se2 s2 rx2 s2' /\ match_states idx' s1' s2'.
+  Proof.
+    clear - HL Hse1.
+    intros idx s1 s2 q1 Hs Hq1. destruct Hq1 as [i s1 qx1 k1 Hqx1 Hvld].
+    inv Hs. inv H2. subst_dep. clear idx0.
+    pose proof (fsim_lts (HL i) _ _ H1 H5) as Hi.
+    edestruct @fsim_match_external as (wx & qx2 & Hqx2 & Hqx & Hsex & H); eauto.
+    exists wx, qx2. intuition idtac.
+    + constructor. eauto.
+      intros j. pose proof (fsim_lts (HL j) _ _ Hsex (Hse1 j)).
+      erewrite fsim_match_valid_query; eauto.
+    + inv H2; subst_dep.
+      edestruct H as (idx' & s2' & Hs2' & Hs'); eauto.
+      eexists (existT _ i idx'), _.
+      split; repeat (econstructor; eauto).
+  Qed.
 
   Lemma semantics_simulation sk1 sk2:
     fsim_properties (sum_cc cc cc_id) cc se1 se2 w
