@@ -289,18 +289,36 @@ Section FSIM.
     |order_l x y : fsim_order H1 x y -> order (inl x) (inl y)
     |order_r x y : fsim_order H2 x y -> order (inr x) (inr y).
 
-  Inductive match_topframes w : index -> frame C1 A -> frame A1 A' -> Prop :=
+  Inductive match_topframes wk : index -> frame C1 A -> frame A1 A' -> Prop :=
     |match_topframes_C s1 s2 idx:
-      match_senv cc w se1 se2 ->
+      match_senv cc wk se1 se2 -> (*????????*)
       Genv.valid_for (skel C1) se1 ->
-      fsim_match_states H1 se1 se2 w idx s1 s2 ->
-      match_topframes w (inl idx) (caller C1 A s1) (caller A1 A' s2)
+      fsim_match_states H1 se1 se2 wk idx s1 s2 ->
+      match_topframes wk (inl idx) (caller C1 A s1) (caller A1 A' s2)
     |match_topframes_A s1 s2 idx:
-      match_senv cc w se1 se2 -> (*?????*)
+      match_senv cc wk se1 se2 -> (*?????*)
       Genv.valid_for (skel A) se1 ->
-      fsim_match_states H2 se1 se2 w idx s1 s2 ->
-      match_topframes w (inr idx) (callee C1 A s1) (callee A1 A' s2).
+      fsim_match_states H2 se1 se2 wk idx s1 s2 ->
+      match_topframes wk (inr idx) (callee C1 A s1) (callee A1 A' s2).
 
+  Inductive match_contframes wk wk': frame C1 A -> frame A1 A' -> Prop :=
+    | match_contframes_C s1 s2:
+      match_senv cc wk' se1 se2 ->
+      (forall r1 r2 s1', match_reply cc wk r1 r2 ->
+       Smallstep.after_external (C1 se1) s1 r1 s1' ->
+       exists idx s2',
+         Smallstep.after_external (A1 se2) s2 r2 s2' /\
+         fsim_match_states H1 se1 se2 wk' idx s1' s2') ->
+      match_contframes wk wk'
+        (caller C1 A s1)
+        (caller A1 A' s2).
+
+  Inductive match_states : index -> list (frame C1 A) -> list (frame A1 A') -> Prop :=
+    |match_states_caller wk idx f1 f2 :
+      match_topframes wk idx f1 f2 ->
+      match_states idx (f1::nil) (f2::nil).
+   | match_states_callee wk wk' idx f1 f2 k1 k2:
+     
 
   Variable match_states : index -> list (frame C1 A) -> list (frame A1 A') -> Prop.
 
