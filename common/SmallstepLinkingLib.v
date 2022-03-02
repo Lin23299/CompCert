@@ -107,13 +107,13 @@ Section LINK'.
      C -->> C         ++            A -->> C            =      C + A -->> C
 
 
-                                                              sum of callconv?
+                                                              sum of callconv ok
 
-      1.asm                       lib.asm                      vertical composition'  ????
+      1.asm                       lib.asm                      vertical composition'  ok
 
     A -->> A         ++            A -->> A            =      A + A -->> A
 
-                                                                 collapse
+                                                                 collapse ?
 
               1.asm + lib.asm = out.asm                ->    A -->> A
 
@@ -480,3 +480,109 @@ Proof.
     induction (fsim_order_wf Hb idx) as [Hx IHx].
     constructor. intros z Hxz. inv Hxz; subst_dep. eauto.
 Qed.
+
+
+(** * TODO *)
+(** 1. collapse simulatin A + A --> A  to A --> A (valid_query restricted) *)
+(** 2. wrapper : giving a A --> C semantics to an asm program. *)
+(** 3. how about modeling the linking with any asm, maybe not lib, with mutual call *)
+Section Collapse.
+  Context {li} (A : semantics (sum_li li li) li).
+
+ Section WITH_SE.
+   Context (se:Genv.symtbl).
+
+    Definition state := Smallstep.state A.
+(*    Inductive after_external: state -> reply li -> state -> Prop :=
+      | after_external_intro_C s r s' k:
+          Smallstep.after_external (C se) s r s' ->
+          after_external (caller s :: k) (inl r) (caller s' :: k)
+      | after_external_intro s r s' k:
+          Smallstep.after_external (A se) s r s' ->
+          after_external (callee s :: k) (inr r) (callee s' :: k). *)
+   Inductive at_external_collapse: state -> query li -> Prop :=
+     | at_external_l s q q' :
+       Smallstep.at_external (A se) s q ->
+       q = inl q' ->
+       at_external_collapse s q'
+     | at_external_r s q q' :
+       Smallstep.at_external (A se) s q ->
+       q = inr q' ->
+       at_external_collapse s q'.
+
+   Inductive after_external_collapse: state -> reply li -> state -> Prop :=
+     | after_external_l s r s' r' :
+       Smallstep.after_external (A se) s r s' ->
+       r = inl r' ->
+       after_external_collapse s r' s'
+     | after_external_r s r s' r' :
+       Smallstep.after_external (A se) s r s' ->
+       r = inr r' ->
+       after_external_collapse s r' s'.
+
+ End WITH_SE.
+  Context (sk: AST.program unit unit).
+
+  Definition semantics_collapse: semantics li li :=
+    {|
+      activate se :=
+        {|
+          Smallstep.step ge := Step (A se);
+          Smallstep.valid_query := Smallstep.valid_query (A se);
+          Smallstep.initial_state := Smallstep.initial_state (A se);
+          Smallstep.at_external := at_external_collapse se;
+          Smallstep.after_external := after_external_collapse se;
+          Smallstep.final_state := Smallstep.final_state (A se);
+          Smallstep.globalenv := tt;
+        |};
+      skel := sk;
+    |}.
+End Collapse.
+
+Section Wrapper.
+  Context {liA}{liC} (A:semantics liA liA) (cc: callconv liC liA).
+
+  Variable wrap_query : query liC -> query liA.
+  Variable wrap_reply : reply liA -> reply liC.
+  Section WITH_SE.
+    Context (se: Genv.symtbl).
+
+    Definition state := Smallstep.state A.
+
+(*    Definition step: state -> trace -> state -> Prop := Step (A se). *)
+
+    Inductive wrap_initial_state (q: query liC): state -> Prop :=
+      | wrap_initial_state_intro s q' w: (*any world?*)
+          match_query cc w q q' ->
+          valid_query A se q' = true ->
+          Smallstep.initial_state (A se) q' s ->
+          wrap_initial_state q s.
+
+    Definition wrap_valid_query (q:query liC) := valid_query A se (wrap_query q).
+
+    Inductive wrap_final_state: state -> reply liC -> Prop :=
+      | wrap_final_state_intro w s r r' :
+          match_reply cc w r r' ->
+          Smallstep.final_state (A se) s r' ->
+          wrap_final_state s r.
+  End WITH_SE.
+
+  Context (sk: AST.program unit unit).
+
+  Definition semantics_wrap: semantics liA liC :=
+    {|
+      activate se :=
+        {|
+          Smallstep.step ge := Step (A se);
+          Smallstep.valid_query := wrap_valid_query se;
+          Smallstep.initial_state := wrap_initial_state se;
+          Smallstep.at_external := Smallstep.at_external (A se);
+          Smallstep.after_external := Smallstep.after_external (A se);
+          Smallstep.final_state := wrap_final_state se;
+          Smallstep.globalenv := tt;
+        |};
+      skel := sk;
+    |}.
+End Wrapper.
+
+

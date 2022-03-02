@@ -141,7 +141,7 @@ Inductive instruction: Type :=
   | Pmovsw_rm (rd: ireg) (a: addrmode)
   | Pmovzl_rr (rd: ireg) (rs: ireg)     (**r [movzl] (32-bit zero-extension) *)
   | Pmovsl_rr (rd: ireg) (rs: ireg)     (**r [movsl] (32-bit sign-extension) *)
-  | Pmovls_rr (rd: ireg)                (** 64 to 32 bit conversion (pseudo) *)
+  | Pmovls_rr (rd: ireg)                (**r 64 to 32 bit conversion (pseudo) *)
   | Pcvtsd2ss_ff (rd: freg) (r1: freg)  (**r conversion to single float *)
   | Pcvtss2sd_ff (rd: freg) (r1: freg)  (**r conversion to double float *)
   | Pcvttsd2si_rf (rd: ireg) (r1: freg) (**r double to signed int *)
@@ -1219,6 +1219,7 @@ Definition semantics (p: program): Smallstep.semantics li_asm li_asm :=
         Smallstep.globalenv := ge;
       |}
   |}.
+
 
 (** Determinacy of the [Asm] semantics. *)
 
